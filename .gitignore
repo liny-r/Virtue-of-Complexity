@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+figures/*.log
+figures/robust.done
+figures/*_fast.*
