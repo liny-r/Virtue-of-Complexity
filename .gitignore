@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-figures/*.log
-figures/robust.done
+.ipynb_checkpoints/
+.DS_Store
+# markers and reduced-run (--quick) outputs; the full-run logs in figures/*.log are tracked
+figures/*.done
 figures/*_fast.*

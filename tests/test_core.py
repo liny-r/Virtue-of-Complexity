@@ -49,14 +49,17 @@ def test_no_lookahead():
     assert np.allclose(base[: i + 1], alt[: i + 1])
 
 
-def test_rff_approximates_mixture_kernel():
+@pytest.mark.parametrize("convention", ["paper", "kernel"])
+def test_rff_approximates_mixture_kernel(convention):
     rng = np.random.default_rng(2)
     X = rng.standard_normal((6, 3))
-    F = make_rff(X, p=3000, seed=3, convention="kernel")
+    F = make_rff(X, p=3000, seed=3, convention=convention)
     n_w = 7 * 3000  # raw features: F F' / P -> (1/7) sum_i K_i  (sin*sin + cos*cos = cos)
     K_hat = F @ F.T / n_w
     d2 = ((X[:, None] - X[None]) ** 2).sum(-1)
-    K = np.mean([np.exp(-d2 / (2 * g)) for g in GAMMAS], axis=0)
+    from voc.kernel import mixture_kernel
+
+    K = mixture_kernel(X, X, convention=convention)
     assert np.abs(K_hat - K).max() < 0.05
 
 
@@ -85,7 +88,8 @@ def test_summarize_shapes_and_sr():
     assert np.isclose(s["SR"][0, 0], y.mean() / y.std())
 
 
-def test_exact_kernel_matches_many_random_features():
+@pytest.mark.parametrize("convention", ["paper", "kernel"])
+def test_exact_kernel_matches_many_random_features(convention):
     from voc.kernel import rolling_kernel_ridge
 
     rng = np.random.default_rng(5)
@@ -93,7 +97,7 @@ def test_exact_kernel_matches_many_random_features():
     X = rng.standard_normal((N, 2))
     y = rng.standard_normal(N)
     z = [0.1, 10.0]
-    exact = rolling_kernel_ridge(X, y, T, z)["pi"]
-    F = make_rff(X, p=4000, seed=7)
+    exact = rolling_kernel_ridge(X, y, T, z, convention=convention)["pi"]
+    F = make_rff(X, p=4000, seed=7, convention=convention)
     approx = rolling_ridge_voc(F, y, T, [F.shape[1]], z)["pi"][:, 0, :]
     assert np.abs(exact - approx).max() < 0.05 * np.abs(exact).max() + 1e-3

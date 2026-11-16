@@ -8,12 +8,14 @@ approximated by random Fourier features (Rahimi & Recht 2007).
     S_{i,t} = P^{-1/2} [sin(gamma_[i/p] w_i' X_t), cos(gamma_[i/p] w_i' X_t)],
     w_i ~ N(0, I_d)                                                         (37)
 
-NOTE (paper ambiguity, to verify): E[cos(a w'(x-y))] = exp(-a^2 ||x-y||^2 / 2) for
-w ~ N(0, I). So eq. (37) taken literally (a = gamma) gives a kernel with variance
-parameter 1/gamma^2, not gamma as in eq. (36). We therefore support two conventions:
+NOTE (paper ambiguity): E[cos(a w'(x-y))] = exp(-a^2 ||x-y||^2 / 2) for w ~ N(0, I). So eq. (37)
+taken literally (a = gamma) gives the kernel exp(-gamma^2 ||x-y||^2 / 2), not eq. (36)'s
+exp(-||x-y||^2 / (2 gamma)). The paper's remark that "when gamma is close to zero the model is
+approximately linear" holds for the literal eq. (37) (small gamma = low frequency) and not for (36).
+We support both conventions:
 
-    "kernel": frequencies w / sqrt(gamma)  -> matches eq. (36)  (default)
-    "paper" : frequencies gamma * w        -> literal eq. (37)
+    "paper" : frequencies gamma * w        -> literal eq. (37)  (default, used for the main results)
+    "kernel": frequencies w / sqrt(gamma)  -> matches eq. (36)  (sensitivity check, files tagged _eq36)
 
 Also: each of the P = 7p weights yields a (sin, cos) PAIR, so there are 2P columns.
 Here L counts columns (features). This function returns RAW (unscaled) columns; the
@@ -33,7 +35,7 @@ def make_rff(
     p: int,
     seed: int,
     gammas: tuple[float, ...] = GAMMAS,
-    convention: str = "kernel",
+    convention: str = "paper",
 ) -> np.ndarray:
     """Return the (N, 2P) random-feature matrix, P = len(gammas) * p.
 

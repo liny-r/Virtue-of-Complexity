@@ -27,7 +27,7 @@ C_GRID = [1 / 6, 1 / 3, 2 / 3, 1, 2, 4, 8, 16, 32, 64, 128, 256]
 Z_GRID = [1e-3, 1e-2, 1e-1, 1, 10, 100, 1000]
 
 
-def run(N: int, T: int, d: int, snr: float, p: int, seeds: int, data_seeds: int, mu: float = 0.0):
+def run(N: int, T: int, d: int, snr: float, p: int, seeds: int, data_seeds: int, mu: float = 0.0, convention: str = "paper"):
     """Returns c grid and, per metric, an array (data_seeds, nL, nz).
 
     Within a dataset, metrics are averaged over `seeds` random-feature draws
@@ -41,7 +41,7 @@ def run(N: int, T: int, d: int, snr: float, p: int, seeds: int, data_seeds: int,
         X, y, _ = simulate_nonlinear(N, d=d, snr=snr, seed=ds, mu=mu)
         acc: dict[str, list[np.ndarray]] = {}
         for s in range(seeds):
-            F = make_rff(X, p=p, seed=1000 + s)
+            F = make_rff(X, p=p, seed=1000 + s, convention=convention)
             out = rolling_ridge_voc(F, y, T, L_grid, Z_GRID)
             m = summarize(out["pi"], y[out["t"]], out["beta2"])
             for k, v in m.items():
@@ -88,6 +88,7 @@ def main():
     ap.add_argument("--seeds", type=int, default=5, help="random-feature draws per dataset")
     ap.add_argument("--data-seeds", type=int, default=50, help="independent simulated datasets")
     ap.add_argument("--log10z", default="-3,-2,-1,0,1,2,3", help="comma-separated log10 ridge grid")
+    ap.add_argument("--convention", default="paper", choices=["paper", "kernel"])
     ap.add_argument("--fast", action="store_true", help="quick smoke run")
     a = ap.parse_args()
     global Z_GRID
@@ -95,10 +96,10 @@ def main():
     if a.fast:
         a.N, a.p, a.seeds, a.data_seeds = 300, 60, 2, 3
     t0 = time.time()
-    c, raw = run(a.N, a.T, a.d, a.snr, a.p, a.seeds, a.data_seeds, a.mu)
+    c, raw = run(a.N, a.T, a.d, a.snr, a.p, a.seeds, a.data_seeds, a.mu, a.convention)
     m = {k: v.mean(0) for k, v in raw.items()}
     FIG_DIR.mkdir(exist_ok=True)
-    tag = (f"_mu{a.mu:g}" if a.mu else "") + ("" if a.log10z == "-3,-2,-1,0,1,2,3" else "_z" + a.log10z.replace(",", "_"))
+    tag = (f"_mu{a.mu:g}" if a.mu else "") + ("" if a.log10z == "-3,-2,-1,0,1,2,3" else "_z" + a.log10z.replace(",", "_")) + ("_eq36" if a.convention == "kernel" else "")
     out = FIG_DIR / (f"sim_theory{tag}_fast.png" if a.fast else f"sim_theory{tag}.png")
     plot(c, raw, a.T, out, a.mu)
     np.savez(out.with_suffix(".npz"), c=c, z=Z_GRID, **raw)

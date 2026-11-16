@@ -1,0 +1,6 @@
+mean annualised Sharpe over 159 factors; z columns: ['1e-3', '1e-2', '1e-1', '1e+0', '1e+1', '1e+2', '1e+3']
+exact kernel, real     : [0.215 0.251 0.322 0.342 0.343 0.343 0.343]
+exact kernel, placebo  : [0.222 0.248 0.303 0.32  0.321 0.321 0.321] (sd [0.01  0.006 0.006] at z=1e-3,1,1e3)
+RFF c=500, real       : [0.213 0.249 0.322 0.342 0.342 0.342 0.342]
+RFF c=500, placebo    : [0.221 0.247 0.303 0.32  0.321 0.321 0.321]
+always long 0.353; trailing mean 0.338

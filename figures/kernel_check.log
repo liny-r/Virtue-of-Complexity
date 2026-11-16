@@ -1,0 +1,16 @@
+signals: std per column [0.99 1.03]; pairwise distance quantiles 10/50/90% [0.5  1.41 3.24]
+
+[2] mean off-diagonal kernel value per bandwidth
+    gamma           0.1    0.5    1.0    2.0    4.0    8.0   16.0
+    eq. 36 (w/sqrt g)   0.076  0.270  0.407  0.557  0.698  0.811  0.891
+    eq. 37 (g*w)       0.979  0.698  0.407  0.164  0.050  0.014  0.004
+
+[1] random features (p = 4000 weights per bandwidth block of 7) vs exact mixture kernel, max |error| on 120 points
+    convention kernel: 0.0109   (1/sqrt(4000) = 0.0158)
+    convention paper : 0.0138   (1/sqrt(4000) = 0.0158)
+
+[3] infinite-ridge exact-kernel position vs trailing mean (T = 12, every 8th factor, first 20)
+    eq. 37 literal (main)  real signals     : effective number of past returns used 11.1 of 12; largest weight 0.13 (uniform = 0.08); corr(position, trailing mean) 0.966
+    eq. 37 literal (main)  shuffled signals : effective number of past returns used 11.0 of 12; largest weight 0.14 (uniform = 0.08); corr(position, trailing mean) 0.963
+    eq. 36                 real signals     : effective number of past returns used 11.1 of 12; largest weight 0.12 (uniform = 0.08); corr(position, trailing mean) 0.956
+    eq. 36                 shuffled signals : effective number of past returns used 10.9 of 12; largest weight 0.13 (uniform = 0.08); corr(position, trailing mean) 0.959
