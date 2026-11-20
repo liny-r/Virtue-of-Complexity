@@ -46,9 +46,13 @@ def load_all(end: str = "2021-12") -> dict[str, pd.Series]:
     return out
 
 
+# Line colours of the paper's figures, one per log10 z = -3 ... 3 (sampled from its legend).
+PAPER_COLORS = ["#952b33", "#c95c2d", "#e4b345", "#82aa45", "#6dbbe9", "#3071b7", "#743489"]
+
+
 def _lines(ax, c, y, ylab=None):
     for j, z in enumerate(Z_GRID):
-        ax.plot(c, y[:, j], color=plt.cm.viridis(j / (len(Z_GRID) - 1)), label=f"log10 z = {np.log10(z):g}")
+        ax.plot(c, y[:, j], color=PAPER_COLORS[j], label=f"log10 z = {np.log10(z):g}")
     ax.set_xscale("log"); ax.axvline(1, color="k", ls=":", lw=1); ax.set_xlabel("complexity c = L / T")
     if ylab:
         ax.set_title(ylab)
@@ -61,7 +65,7 @@ def make_figures(d: dict, tag: str, T: int):
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
     _lines(ax[0], c, mean("R2"), f"OOS $R^2$ (eq. 47), mean of {n} factors"); ax[0].set_ylim(-1, 0.1)
     _lines(ax[1], c, np.sqrt(mean("B2")), "$\\|\\hat\\beta\\|$ (sqrt of eq. 48), mean of factors"); ax[1].set_ylim(0, 10)
-    ax[0].legend(fontsize=7); fig.suptitle(f"Fig. 1 analogue, momentum signals, T={T}"); fig.tight_layout()
+    ax[0].legend(fontsize=7); fig.suptitle(f"Fig. 1 analogue, {'Welch-Goyal' if '_wg' in tag else 'momentum'} signals, T={T}"); fig.tight_layout()
     fig.savefig(out / f"fig1{tag}.png", dpi=130); plt.close(fig)
 
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
