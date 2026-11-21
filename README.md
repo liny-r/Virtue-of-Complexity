@@ -433,7 +433,7 @@ data/           fetch_data.py + ff_factors_monthly.csv, jkp_factors_usa_monthly.
 figures/        generated figures, .npz result arrays, full-run logs, report_numbers*.log
 notebooks/      virtue_of_complexity.ipynb: walkthrough of the implementation and all results
                 (live code checks; heavy results are re-plotted from figures/*.npz)
-slides/         presentation (LaTeX/Beamer source and PDF, speaker script, paper figure crops)
+slides/         presentation (LaTeX/Beamer source and PDF, the method pages, paper figure crops)
 paper/          the paper under replication (SSRN 4166368) and its companion (NBER 30217)
 tests/          unit tests
 run_all.py      single entry point
