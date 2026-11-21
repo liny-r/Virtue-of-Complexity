@@ -1,6 +1,6 @@
 \documentclass[aspectratio=169,10pt]{beamer}
 \usetheme{metropolis}
-\usepackage{amsmath,amssymb,booktabs}
+\usepackage{amsmath,amssymb,booktabs,array}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta}
 \graphicspath{{../figures/}{./}}
@@ -70,6 +70,16 @@ $\hat\beta_t$ & the only learned weights ($L$ of them) \\
 
 % ================= Hongjun: 4-6 =================
 \renewcommand{\spk}{Presenter: Hongjun Ding}
+\begin{frame}{The paper's setup (Section 3): from a forecast to a strategy}
+\begin{itemize}
+  \item \textbf{Assumption 1:} $R_{t+1}=f(X_t)+\varepsilon_{t+1}$, with $f$ smooth and unknown, $\varepsilon\sim N(0,1)$
+  \item If $\hat f(X_t)\approx E_t[R_{t+1}]$, the conditionally efficient position is $\hat\pi_t=\hat f(X_t)$, since standardised returns have unit conditional volatility
+  \item \textbf{Kernel ridge regression:} $\hat f(x)=T^{-1}\hat k(x)^\top\big(zI+T^{-1}\hat K\big)^{-1}R$, equivalent to a shallow two-layer network: $P$ random hidden units, ridge-trained output layer
+  \item \textbf{The pitfall:} $\hat f\to f$ only if $c=P/T\to0$. With little data ($T$ small) that forces simple models
+  \item \textbf{The trade-off:} better approximation (large $P$) vs.\ over-parametrisation. Kelly et al.\ (2022): the highest out-of-sample $R^2$ and Sharpe come from the \alert{highest} complexity
+\end{itemize}
+\end{frame}
+
 \begin{frame}{Model: fixed random features, learned ridge weights}
 \centering
 \begin{tikzpicture}[font=\scriptsize,
@@ -89,17 +99,17 @@ $\hat\beta_t$ & the only learned weights ($L$ of them) \\
 
 {\scriptsize Same $\omega$ for every factor at a given seed; 100 seeds; metrics averaged over seeds, then over the 159 factors}
 
-\vspace{4pt}
+\vspace{3pt}
+{\footnotesize \textbf{Study A:} $d=15$ Welch--Goyal macro variables, the same for every factor. \textbf{Study B:} $d=2$ momentum signals from each factor's own returns: last month and the average of the 11 months before.}
+
+\vspace{1pt}
 \raggedright
 \textbf{Learned: ridge on the last $T$ months.}
 \[
 \hat\beta_t(z)=\Big(zI+\tfrac1T\sum_{\tau=t-T}^{t-1}S_\tau S_\tau^\top\Big)^{-1}\tfrac1T\sum_{\tau=t-T}^{t-1}S_\tau R_{\tau+1}
 \ \Longleftrightarrow\ \min_\beta\ \tfrac1T\sum_\tau (R_{\tau+1}-\beta^\top S_\tau)^2+z\|\beta\|^2
 \]
-\begin{itemize}
-  \item Nonlinear in $X_t$, linear in $\hat\beta$: a two-layer network with a frozen random first layer
-  \item Loss is squared error. \alert{Sharpe is not optimised}; it is only evaluated
-\end{itemize}
+{\small Nonlinear in $X_t$, linear in $\hat\beta$ (a two-layer network with a frozen first layer). The loss is squared error: \alert{Sharpe is not optimised}, only evaluated.}
 \end{frame}
 
 \begin{frame}{Timing strategy and what we measure}
@@ -119,108 +129,161 @@ $\hat\pi_t=S_t^\top\hat\beta_t$ & $\hat R_{t+1}=\hat\pi_t\,R_{t+1}$
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Why can $L\gg T$ work?}
+\begin{frame}{Why $L\gg T$ can work: three results from Kelly et al.\ (2022)}
+\begin{enumerate}
+  \item \textbf{Leverage falls (Lemma 1).} Among all interpolators, the ridgeless $\hat\beta(0^+)$ has the smallest norm, so $\|\hat\beta\|$ falls with $L$ for $L>T$. Since $E[\hat\pi_t^2]\approx\|\hat\beta\|^2$, leverage falls for $c>1$
+  \item \textbf{Expected return rises.} $E[\hat\pi_tR_{t+1}]$ increases with $c$ as the model approximates $f$ better; even the ridgeless strategy has positive out-of-sample expected return
+  \item \textbf{So $R^2$ and Sharpe rise.} For $c>1$ both increase with complexity, and with enough shrinkage for all $c$. With too little shrinkage they blow up at $c=1$ (double ascent)
+\end{enumerate}
+\vspace{4pt}
+\[E\big[(R_{t+1}-\hat\pi_t)^2\big]=E[R_{t+1}^2]-2\underbrace{E[\hat\pi_tR_{t+1}]}_{\text{timing expected return}}+\underbrace{E[\hat\pi_t^2]}_{\text{leverage}}\]
+{\small $R^2$ is a poor measure (it is sensitive to the scale of $\hat\pi_t$); Sharpe captures the risk--return trade-off. As $c\to\infty$ the model approaches kernel ridge regression.}
+\end{frame}
+
+\begin{frame}{What the paper concludes (Sections 5--6)}
 \begin{itemize}
-  \item At $c=1$ with tiny $z$ the model interpolates the sample: $\|\hat\beta\|$ and volatility spike, $R^2$ crashes (\textbf{double descent})
-  \item For $c>1$ the ridge (minimum-norm) solution gets smoother and $\|\hat\beta\|$ falls
-  \item As $c\to\infty$ the random-feature model approaches \textbf{kernel ridge regression}
-  \item Implication: ``more complex'' means ``a better-behaved smoother of the same signals'', not ``more overfit''
+  \item Tested on three asset classes: 159 equity factors, 44 futures, US Treasuries
+  \item Predictions confirmed: $R^2$ and expected return rise with $c$; $\|\hat\beta\|$ and volatility fall; Sharpe rises by about $3\times$ from low to high complexity
+  \item Uniform across assets (Fig.~4) and robust to the training window, $T=12,60,120$ (Fig.~5)
+  \item Strong results even with very short windows; the authors read this as some truth in the non-stationarity worry
+  \item \textbf{Our scope:} equity factors only
 \end{itemize}
-\vspace{6pt}
-\textbf{Paper's prediction at $T=12$:} low $z$: a dip near $c=1$, then recovery; large $z$: Sharpe increasing in $c$.\\[4pt]
-\textbf{Caveat the lecture also stresses:} not a licence to add junk predictors.
 \end{frame}
 
 % ================= Yueqi: 7-9 =================
 \renewcommand{\spk}{Presenter: Yueqi Lin}
 \begin{frame}{Our implementation (equities only)}
 \begin{itemize}
-  \item Written from the paper's equations: features (36--37), rolling ridge in dual $T\times T$ form (so $L=7{,}000$ is cheap), metrics (41--51)
-  \item Same 159 factors and same two signal sets (A, B)
-  \item $T=12$: 100 feature draws; $T=60,120$: 10 draws
-  \item \textbf{Cuts:} $L\le7{,}000$ (paper 12{,}000); futures and bonds not replicated (paid data)
-  \item \textbf{Beyond the paper:} baselines, time-shuffled placebo, exact-kernel check, simulator
+  \item \textbf{Notation:}
+  \begin{itemize}
+    \item $T$ = months in the training window (12, 60, 120)
+    \item $L$ = number of random features used (2 to 7{,}000)
+    \item $c=L/T$ = features per observation, the complexity
+  \end{itemize}
+  \item Same 159 factors and same two signal sets:
+  \begin{itemize}
+    \item A: the Welch--Goyal macro variables
+    \item B: the momentum signals
+  \end{itemize}
+  \item \textbf{Random Fourier features:} $T=12$: 100 feature draws; $T=60,120$: 10 draws
+  \item \textbf{Cuts:} $L\le7{,}000$ (paper 12{,}000)
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Sharpe vs.\ complexity at $T=12$: paper (top) and ours (bottom)}
+\begin{frame}{OOS Sharpe vs.\ complexity at $T=12$: paper (top) and ours (bottom)}
 \centering
-\includegraphics[width=0.74\textwidth]{paper_fig3.png}\hspace{4pt}\raisebox{0.2em}{\includegraphics[height=0.2\textheight]{paper_legend.png}}\\[-1pt]
+\includegraphics[width=0.74\textwidth]{paper_fig3.png}\hspace{4pt}\raisebox{0.2em}{\includegraphics[height=0.24\textheight]{paper_legend.png}}\\[-1pt]
 {\scriptsize Paper Fig.\ 3, panels A (Welch--Goyal) and B (momentum); broken $c$ axis. Same colour code in both rows}\\[3pt]
 \includegraphics[width=0.8\textwidth]{fig3_T12_paperaxes.png}\\[-1pt]
 {\scriptsize Ours: mean OOS Sharpe over 159 factors, same axes (linear $c$ to 50, break, largest model $c=500$ at right; paper 1{,}000)}
 \end{frame}
 
-\begin{frame}{Replication: close at $T=12$, weaker at longer $T$}
+\begin{frame}{$R^2$ and coefficient norm at $T=12$: paper (left) and ours (right)}
 \centering
-\begin{tabular}{lcccc}
-\toprule
-Mean Sharpe, large $z$ & $T=12$ ours & $T=12$ paper & $T=60$ & $T=120$ \\
-\midrule
-A: Welch--Goyal & 0.117 $\to$ 0.368 & $\approx$0.11 $\to$ 0.36 & +0.069 & +0.030 \\
-B: Momentum & 0.166 $\to$ 0.342 & $\approx$0.10 $\to$ 0.30 & +0.068 & +0.018 \\
-\bottomrule
-\end{tabular}
-
-{\footnotesize $T=12$: $c_{\min}\to c_{\max}$; $T=60,120$: rise. Paper values read off the figure by eye.}
-
-\vspace{2pt}
-\raggedright\small
-\begin{itemize}
-  \item \textbf{Sharpe (Fig.\ 3):} 96--98\% of factors improve; small $z$: dip at $c=1$ (0.093 vs paper $\approx$0.07), then recovery
-  \item \textbf{$R^2$ (Fig.\ 1):} collapses near $c=1$ ($-1.67$) while Sharpe stays positive; $-0.18$ at $c=500$ (paper $\approx-0.45$)
-  \item \textbf{Return, volatility (Fig.\ 2):} expected return matches at low $z$ (0.039 vs $\approx$0.04); volatility is lower (0.63 vs $\approx$0.8--0.9)
-  \item \textbf{Longer windows (Fig.\ 5):} same direction, much smaller gain; Sharpe falls at $T=120$, $z=10^{-3}$
-  \item \textbf{Not matched:} $\|\hat\beta\|$ plateaus (paper: falls); $z\ge1$ curves coincide (paper: fan out)
+\includegraphics[height=3.5cm]{paper_fig1.png}\hspace{4pt}\includegraphics[height=3.5cm]{fig1_T12_paperlayout.png}\\[1pt]
+\includegraphics[width=0.7\textwidth]{paper_legend_h.png}
+\vspace{1pt}
+\begin{itemize}\small
+  \item Near $c=1$ with small $z$: $R^2$ collapses and $\|\hat\beta\|$ spikes, as in the paper (ours: $R^2=-1.67$ at $c=1$, momentum, $z=10^{-3}$)
+  \item Past $c=1$ both recover; but our $\|\hat\beta\|$ plateaus (7.8) where the paper's keeps falling toward 0
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Feature scaling: we use $1/\sqrt{L}$ (our main runs)}
+\begin{frame}{Expected return and volatility at $T=12$: paper (left) and ours (right)}
 \centering
-\includegraphics[width=0.68\textwidth]{scaling_slide.png}\\[-2pt]
-{\scriptsize Ours, $T=12$, momentum. Left: main, $1/\sqrt{L}$: the kernel-consistent scaling (Rahimi--Recht; Sutherland--Schneider). Right: raw features ($\kappa=1$), a check with 10 draws}
-\vspace{2pt}
+\includegraphics[height=3.5cm]{paper_fig2.png}\hspace{4pt}\includegraphics[height=3.5cm]{fig2_T12_paperlayout.png}\\[1pt]
+\includegraphics[width=0.7\textwidth]{paper_legend_h.png}
+\vspace{1pt}
+\begin{itemize}\small
+  \item At small $z$, expected return stays near 0.04 per month while volatility falls with $c$: the Sharpe rise comes from lower risk, not higher return
+  \item At large $z$ both shrink toward 0 in ours; the paper's curves at $z=10,100$ stay higher (feature scaling: see backup)
+\end{itemize}
+\end{frame}
 
-{\scriptsize
-\begin{tabular}{lccccccc}
+\begin{frame}{Replication scorecard: Sharpe at large $z$, paper vs.\ ours}
+\centering
+{\footnotesize
+\begin{tabular}{p{4.4cm}>{\centering\arraybackslash}p{3.6cm}>{\centering\arraybackslash}p{3.8cm}}
 \toprule
-Sharpe at $c=500$ ($c=1000$ paper) & $z{=}10^3$ & $10^2$ & $10^1$ & $1$ & $10^{-1}$ & $10^{-2}$ & $10^{-3}$ \\
+\textbf{$T=12$: Sharpe, large $z$} & Paper $c_{\min}\to c_{\max}$ & Ours $c_{\min}\to c_{\max}$ \\
 \midrule
-Paper (by eye) & 0.30 & 0.25 & 0.20 & 0.17 & 0.17 & 0.16 & 0.15 \\
-Ours, main ($1/\sqrt L$) & 0.342 & 0.342 & 0.342 & 0.342 & 0.322 & 0.249 & 0.213 \\
-Ours, raw ($\kappa=1$) & 0.331 & 0.264 & 0.218 & 0.202 & 0.192 & 0.186 & 0.184 \\
+A: Welch--Goyal & $\approx$0.11 $\to$ $\approx$0.36 ($3\times$) & 0.117 $\to$ 0.368 ($3.1\times$) \\
+B: Momentum & $\approx$0.10 $\to$ $\approx$0.30 ($3\times$) & 0.166 $\to$ 0.342 ($2.1\times$) \\
 \bottomrule
 \end{tabular}}
 
-\vspace{2pt}
+\vspace{5pt}
+{\footnotesize
+\begin{tabular}{p{4.4cm}>{\centering\arraybackslash}p{3.6cm}>{\centering\arraybackslash}p{3.8cm}}
+\toprule
+\textbf{$T=60$: Sharpe, large $z$} & & Ours $c_{\min}\to c_{\max}$ \\
+\midrule
+A: Welch--Goyal & & 0.266 $\to$ 0.335 ($1.26\times$) \\
+B: Momentum & & 0.277 $\to$ 0.345 ($1.25\times$) \\
+\bottomrule
+\end{tabular}}
 
-{\scriptsize The paper does not state its scaling, so raw features are only a candidate. Best Sharpe is $\approx0.342$ under every scaling: our conclusions do not depend on it.}
+\vspace{5pt}
+{\footnotesize
+\begin{tabular}{p{4.4cm}>{\centering\arraybackslash}p{3.6cm}>{\centering\arraybackslash}p{3.8cm}}
+\toprule
+\textbf{$T=120$: Sharpe, large $z$} & & Ours $c_{\min}\to c_{\max}$ \\
+\midrule
+A: Welch--Goyal & & 0.296 $\to$ 0.326 ($1.10\times$) \\
+B: Momentum & & 0.345 $\to$ 0.363 ($1.05\times$) \\
+\bottomrule
+\end{tabular}}
+
+\vspace{3pt}
+{\scriptsize Paper values (T = 12) read off its figures by eye. Largest $c$: ours 500 / 64 / 32 at $T=12$ / 60 / 120; paper 1{,}000 at $T=12$.}
 \end{frame}
 
-\begin{frame}{Beyond the paper: is the baseline fair?}
+\begin{frame}{Beyond Sharpe ($T=12$, $z=10^{-3}$): paper vs.\ ours}
 \centering
+{\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{At $z=10^{-3}$} & Paper A & Ours A & Paper B & Ours B \\
+\midrule
+Sharpe at $c=1$ (the dip) & $\approx$0.07 & 0.079 & $\approx$0.07 & 0.093 \\
+Expected return (per month) & $\approx$0.041 & 0.038 & $\approx$0.04 & 0.039 \\
+Volatility (per month) & $\approx$0.45 & 0.42 & $\approx$0.8--0.9 & 0.63 \\
+$R^2$ & $\approx-0.05$ & $-0.065$ & $\approx-0.45$ & $-0.18$ \\
+$\|\hat\beta\|$ & falls to $\approx1$ & 6.1 (plateau) & falls to $\approx1$ & 7.8 (plateau) \\
+\bottomrule
+\end{tabular}}
+
+\vspace{4pt}
+{\scriptsize Paper values read off its figures by eye. Rows other than the dip are at the largest $c$: ours 500, paper 1{,}000. 96--98\% of factors improve at $T=12$.}
+
+\vspace{6pt}
+\raggedright\small
+\textbf{Close:} Sharpe dip, expected return, volatility. \textbf{Not matched:} $\|\hat\beta\|$ plateaus, and the $z\ge1$ curves coincide (feature scaling: see backup).
+\end{frame}
+
+\begin{frame}{Does complexity beat simple baselines?}
+\begin{center}
 \begin{tabular}{lccc}
 \toprule
 Mean Sharpe, 159 factors (B) & $T=12$ & $T=60$ & $T=120$ \\
 \midrule
-Model, large $z$, $c_{\max}$ & 0.342 & 0.345 & 0.363 \\
+Model, large $z$, $c_{\max}$ & 0.342 & 0.345 & \textbf{0.363} \\
 Always long the vol-scaled factor & \textbf{0.353} & \textbf{0.354} & 0.351 \\
 Trailing $T$-month mean & 0.338 & 0.309 & 0.303 \\
 Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \bottomrule
 \end{tabular}
+\end{center}
 \vspace{6pt}
 \raggedright
 \begin{itemize}
-  \item The paper's panels compare model sizes only: \textbf{no always-long benchmark}
-  \item Model beats linear and trailing mean; it \textbf{ties} always-long ($T=12$: $-0.011$, s.e.\ 0.017)
   \item Always-long is flattering: factors are signed using the published findings
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Beyond the paper: placebo with time-shuffled signals}
 \centering
-\includegraphics[width=0.97\textwidth]{placebo_paperaxes.png}
+\includegraphics[width=0.96\textwidth]{placebo_paperaxes.png}
 \vspace{-2pt}
 \begin{itemize}\small
   \item Same rise with shuffled signals: $+0.177$ placebo vs $+0.176$ real ($z=10^3$, $T=12$)
@@ -254,15 +317,8 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 
 % ================= Backup =================
 \appendix
-\renewcommand{\spk}{Presenter: Yueqi Lin}
-\begin{frame}{Backup A: $R^2$ and $\|\hat\beta\|$ ($T=12$, ours)}
-\centering
-\includegraphics[height=0.72\textheight]{fig1_T12_paperaxes.png}\\
-{\small Top: $R^2$; bottom: $\|\hat\beta\|$. Panel A Welch--Goyal, panel B momentum. At $z=10^{-3}$ (momentum): $R^2=-1.67$ at $c=1$, $-0.18$ at $c=500$.}
-\end{frame}
-
 \renewcommand{\spk}{Presenter: Hongjun Ding}
-\begin{frame}{Backup B: why squared error and Sharpe can disagree}
+\begin{frame}{Backup: why squared error and Sharpe can disagree}
 \[
 \E\big[(R_{t+1}-\hat\pi_t)^2\big]=\E[R_{t+1}^2]-2\,\E[\hat\pi_t R_{t+1}]+\E[\hat\pi_t^2]
 \]
@@ -272,6 +328,30 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
   \item Scaling $\hat\pi_t$ by a positive constant leaves the Sharpe of $\hat\pi_tR_{t+1}$ unchanged, which is why curves for $z\ge10$ coincide in our results
   \item So the paper reports both prediction ($R^2$) and economic (Sharpe, return, volatility) measures
 \end{itemize}
+\end{frame}
+
+
+\renewcommand{\spk}{Presenter: Yueqi Lin}
+\begin{frame}{Backup: feature scaling, we use $1/\sqrt{L}$ (our main runs)}
+\centering
+\includegraphics[width=0.68\textwidth]{scaling_slide.png}\\[-2pt]
+{\scriptsize Ours, $T=12$, Study B (momentum). Left: main, $1/\sqrt{L}$: the kernel-consistent scaling (Rahimi--Recht; Sutherland--Schneider). Right: raw features ($\kappa=1$), a check with 10 draws}
+\vspace{2pt}
+
+{\scriptsize
+\begin{tabular}{lccccccc}
+\toprule
+Sharpe at $c=500$ ($c=1000$ paper) & $z{=}10^3$ & $10^2$ & $10^1$ & $1$ & $10^{-1}$ & $10^{-2}$ & $10^{-3}$ \\
+\midrule
+Paper (by eye) & 0.30 & 0.25 & 0.20 & 0.17 & 0.17 & 0.16 & 0.15 \\
+Ours, main ($1/\sqrt L$) & 0.342 & 0.342 & 0.342 & 0.342 & 0.322 & 0.249 & 0.213 \\
+Ours, raw ($\kappa=1$) & 0.331 & 0.264 & 0.218 & 0.202 & 0.192 & 0.186 & 0.184 \\
+\bottomrule
+\end{tabular}}
+
+\vspace{2pt}
+
+{\scriptsize The paper does not state its scaling, so raw features are only a candidate. Best Sharpe is $\approx0.342$ under every scaling: our conclusions do not depend on it.}
 \end{frame}
 
 \end{document}

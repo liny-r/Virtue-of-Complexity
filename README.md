@@ -3,20 +3,20 @@
 **Paper:** Bryan Kelly, Semyon Malamud, Kangying Zhou (2022), *The Virtue of Complexity Everywhere*,
 SSRN Working Paper 4166368 (version of July 18, 2022). Theory comes from the companion paper,
 Kelly, Malamud, Zhou (2022), *The Virtue of Complexity in Return Prediction*. The paper has no
-public code that I used; everything here is written from the paper's equations.
+public code that we used; everything here is written from the paper's equations.
 
 Course: Deep Learning in Finance, Assignment 1.
 
 ## In two minutes
 
-The paper fits a ridge regression on **P random Fourier features** of a few return-predicting
-signals, with P far larger than the training window T (as small as 12), and reports that
-out-of-sample **Sharpe rises with complexity c = P/T** once the ridge penalty z is large enough.
+The paper fits a ridge regression on **L random Fourier features** of a few return-predicting
+signals, with L far larger than the training window T (as small as 12), and reports that
+out-of-sample **Sharpe rises with complexity c = L/T** once the ridge penalty z is large enough.
 
-I implemented that model and replicated the paper's equity-factor results (Figures 1–5) on its own
+We implemented that model and replicated the paper's equity-factor results (Figures 1–5) on its own
 universe: **159 US equity factors** (6 French-library factors + 153 JKP characteristic factors), monthly,
 for **both** of the paper's equity studies: the 15 Welch–Goyal macro predictors (its Panel A) and the 2
-factor-momentum signals (its Panel B), T = 12, 60, 120, 100 feature draws at T = 12. Beyond the paper, I tested
+factor-momentum signals (its Panel B), T = 12, 60, 120, 100 feature draws at T = 12. Beyond the paper, we tested
 the theory in a simulator and ran controls the paper does not report (baselines, a placebo, exact kernel).
 
 | Question | Answer |
@@ -27,7 +27,7 @@ the theory in a simulator and ran controls the paper does not report (baselines,
 | Beyond the paper: does the model beat simple alternatives? | **No.** It beats a linear model but not staying long the (vol-scaled) factor: T = 12, momentum 0.342 vs 0.353 (−0.011, s.e. 0.017); Welch–Goyal 0.368 vs 0.349 (+0.019, s.e. 0.018). |
 | Beyond the paper: is the rise with c learned predictability? | **Mostly not.** With the signals **shuffled in time** the curve rises by the same amount (+0.177 for the placebo vs +0.176 for real signals, T = 12); the rise is the random features converging to the exact kernel. Real signals add a roughly constant +0.02 at high c (≈ 4 placebo sd) at T = 12, and more at longer windows (+0.05 at T = 60, +0.07 at T = 120, 9–13 sd). |
 
-Results are for US equity factors only: no futures, no Treasuries. See "What I did not do".
+Results are for US equity factors only: no futures, no Treasuries. See "What we did not do".
 
 ## References
 
@@ -38,12 +38,12 @@ Results are for US equity factors only: no futures, no Treasuries. See "What I d
 * Fama–French and momentum factors: Kenneth French's Data Library (Dartmouth Tuck).
 * Rahimi, A., Recht, B. (2007). Random features for large-scale kernel machines (the feature construction).
 
-## What I implemented
+## What we implemented
 
 * `voc/features.py` — random Fourier features for the mixture of 7 Gaussian kernels, eqs. (36)–(37).
   The default (`convention="paper"`) is the literal eq. (37): frequencies γ·ω. `convention="kernel"` is eq. (36).
-* `voc/ridge.py` — rolling ridge, eqs. (8)–(11), in the dual (T×T) form so P = 7,000 is cheap, with all
-  nested models L = 2…P obtained in one pass (cumulative Gram matrices over blocks of features).
+* `voc/ridge.py` — rolling ridge, eqs. (8)–(11), in the dual (T×T) form so L = 7,000 is cheap, with all
+  nested models L = 2, 4, … obtained in one pass (cumulative Gram matrices over blocks of features).
 * `voc/metrics.py` — out-of-sample R², expected return, volatility, Sharpe, ‖β‖, eqs. (41)–(46).
 * `voc/preprocess.py` — return and signal standardisation, eqs. (13)–(16), strictly past-only; the 2 momentum
   signals and the 15 Welch–Goyal predictors.
@@ -57,18 +57,18 @@ Results are for US equity factors only: no futures, no Treasuries. See "What I d
   the c → ∞ limit), `experiments/scaling_check.py` (feature normalisation).
 * `tests/` — 13 tests (see below).
 
-## What I did not do
+## What we did not do
 
 * **Futures and Treasuries.** The paper's futures come from the paid Stevens Continuous Futures
-  feed and its bonds from CRSP/Fama–Bliss. I did not substitute other data.
+  feed and its bonds from CRSP/Fama–Bliss. We did not substitute other data.
 * **Seeds at T = 60 and 120:** 100 feature draws at T = 12 (as in the paper), but 10 at T = 60/120 and in the scaling
   check. Per-seed metrics are averaged as in eqs. (47)–(51); the seed-averaged position of eq. (39) is not
   implemented. The smallest models (L = 2, 4) depend strongly on the draw (section 3.4).
-* **P up to 7,000 columns**, not 12,000: c ≤ 500 at T = 12 (the paper reaches 1,000), c ≤ 64 at T = 60 and
+* **L up to 7,000 features (columns)**, not 12,000: c ≤ 500 at T = 12 (the paper reaches 1,000), c ≤ 64 at T = 60 and
   c ≤ 32 at T = 120.
-* The curves are on a log c axis (the paper uses a linear axis to c = 50 and a break to 1,000).
+* The README figures use a log c axis. The paper uses a linear axis to c = 50 with a break to 1,000: the notebook (section 3c) and the slides redraw the results on those axes (our largest model is c = 500).
 * One of the 159 factors (`intrinsic value`) is a substitute (see section 0).
-* The Welch–Goyal predictors are my reconstruction from Goyal's public spreadsheet (a 2026 vintage) and the paper's
+* The Welch–Goyal predictors are our reconstruction from Goyal's public spreadsheet (a 2026 vintage) and the paper's
   footnote list; the paper's exact variable construction is not given (section "Where the paper is ambiguous").
 * No transaction costs, as in the paper.
 
@@ -82,6 +82,7 @@ python -m experiments.curves --signals wg --workers 8      # Welch–Goyal signa
 python run_all.py --quick     # reduced run, exercises the whole pipeline (< 3 min)
 python run_all.py             # full run, regenerates everything reported below (~4 h on 8 cores)
 python run_all.py --eq36      # additionally the eq. (36) sensitivity set (~2.5 h more; files end in _eq36)
+python -m experiments.plot_paper_axes   # redraw saved results on the paper's axes (slides; no re-run)
 ```
 
 Tested on Python 3.13 (macOS, 8 cores). `--workers 1` (the default for the single scripts) gives the same
@@ -100,13 +101,13 @@ File tags: no suffix = momentum signals with the literal eq. (37) (main); `_wg` 
 
 ### 0. Data consistency with the paper (`python -m experiments.check_table1`, `figures/table1_check.png`)
 
-I transcribed the paper's Table 1 (159 factors; `data/paper_table1.csv`) and recomputed the same statistics from
+We transcribed the paper's Table 1 (159 factors; `data/paper_table1.csv`) and recomputed the same statistics from
 our files, cut at 2021-12. Of 158 factors matched by name, annualised mean, volatility and Sharpe
 correlate 0.996, 0.9995 and 0.997 with the paper's. Start months agree for 155 of 158 (`age`, `gp_at`,
 `opex_at` start one month earlier here). Sharpe differences average +0.010 (sd 0.022, max 0.117 for
 `o_score`), mean-Sharpe over factors is 0.320 here against 0.310 in the paper. The small differences are
-what I would expect from a newer data vintage (the JKP file I downloaded is dated 2026-04); I did not test
-that. The paper's JKP factors are therefore the **US, capped value-weighted** series, which is what I use.
+what we would expect from a newer data vintage (the JKP file we downloaded is dated 2026-04); we did not test
+that. The paper's JKP factors are therefore the **US, capped value-weighted** series, which is what we use.
 
 Checked against Jensen, Kelly & Pedersen (2021/2023), SSRN 3774514, which defines these factors: tercile
 long-short spreads with breakpoints from non-micro stocks, capped value weights (market equity
@@ -116,7 +117,7 @@ the downloadable series are unscaled, and the paper's Table 1 volatilities (4%�
 
 Two things to know. (1) One of the 159 rows, `intrinsic value`, has no counterpart: the public JKP file has
 `ival_me` (intrinsic value to market) instead, and the two differ (paper: mean −1.43%, Sharpe −0.15;
-`ival_me`: +3.99%, 0.40). So 152 of my 153 JKP series are the paper's, and one is a substitute; it is
+`ival_me`: +3.99%, 0.40). So 152 of our 153 JKP series are the paper's, and one is a substitute; it is
 about 0.6% of the average. (2) The factors are signed using the original publications' findings, so
 "always long" is a benchmark that uses knowledge of which direction worked in the literature; a real-time
 investor would not have it. This makes the always-long baseline (0.349–0.353) flattering to compare against.
@@ -135,7 +136,7 @@ Figures: `figures/fig1_T12.png` (R², ‖β‖), `fig2_T12.png` (expected return
 
 At c = 500 minus c = 0.17 (z = 1e3): +0.176 (s.e. 0.009 across factors, 96% of factors positive), 2.1×. At
 z = 1e-3 the curve falls to a minimum of 0.093 **at c = 1** and recovers to 0.213 at c = 500. Curves for z ≥ 10 coincide: Sharpe is
-invariant to the scale of the position, so at large z only the direction of β matters (under my feature normalisation;
+invariant to the scale of the position, so at large z only the direction of β matters (under our feature normalisation;
 see section 4). With 20 draws instead of 100 the c = 0.17 point was 0.135 (not 0.166) and c = 1 0.282 (not 0.289), while c ≥ 16
 agreed to 0.001; the smallest models are the noisy part (section 3.4).
 
@@ -156,8 +157,8 @@ agreed to 0.001; the smallest models are the noisy part (section 3.4).
 * **‖β‖ (Fig. 1):** **partly.** It peaks near c = 2 (9.6) and then falls to 7.8, as the paper's does (Lemma 1), but it
   plateaus where the paper's falls towards ≈ 1 by c = 50 (section 4).
 * **ER and Vol (Fig. 2):** low-z ER matches (0.039 vs ≈ 0.04), Vol is lower (0.63 vs ≈ 0.8–0.9). But the
-  paper's ER is still 0.010 at z = 1e3 and 0.030 at z = 1e2, where mine is ≈ 0: the paper's z axis sits roughly
-  three decades above mine.
+  paper's ER is still 0.010 at z = 1e3 and 0.030 at z = 1e2, where ours is ≈ 0: the paper's z axis sits roughly
+  three decades above ours.
 * **Fig. 4 (per-factor normalised Sharpe, z = 1e3):** the cross-factor mean is 0.67 at c = 1 and 0.95 at c = 500; 92% of
   factors end above 0.9 of their own range, 4% below 0.5, and 96% end above their c = 0.17 value. The paper reports the rise is
   uniform across assets; here it is for most factors but not all.
@@ -199,12 +200,12 @@ Mean annualised Sharpe (`figures/fig3_T60.png`, `fig3_T120.png`, `_wg` versions)
 | Linear ridge on the signals | 0.11 – 0.16 (0.11 – 0.32) | 0.24 – 0.27 (0.19 – 0.31) | 0.31 – 0.35 (0.22 – 0.31) |
 
 At large ridge the momentum curve rises by +0.068 at T = 60 (s.e. 0.005; 86% of factors positive, 1.24×) and +0.018 at T = 120
-(s.e. 0.002; 75%, 1.05×); the Welch–Goyal curve by +0.069 and +0.030. The paper's Figure 5 reports a monotone rise at both windows; I
+(s.e. 0.002; 75%, 1.05×); the Welch–Goyal curve by +0.069 and +0.030. The paper's Figure 5 reports a monotone rise at both windows; we
 get that direction but a much smaller size, with the model never clearly above always long: model minus always long is −0.009 (s.e. 0.013) at
 T = 60 and +0.013 (0.012) at T = 120 for momentum, −0.014 (0.013) and −0.023 (0.013) for Welch–Goyal.
 Caveat: at a fixed c = 0.17 the longer windows already have more features (10 at T = 60, 20 at T = 120, against 2
 at T = 12), so the low-complexity end is not comparable across windows. At T = 120 an intermediate ridge z = 1e-1 gives 0.402 (momentum),
-above always long (0.351), but that z was picked by looking at the out-of-sample grid, so I do not count it as evidence
+above always long (0.351), but that z was picked by looking at the out-of-sample grid, so we do not count it as evidence
 of timing skill.
 
 ### 3. Beyond the paper: what the curve does and does not show
@@ -273,12 +274,12 @@ Returns have unit variance and a small non-linear predictable part (snr = 0.05).
 
 Under the eq. (36) kernel (earlier runs, `_eq36` files) the dip appeared only at z ≤ 1e-8, and weakly (t = −2.3). Adding an unconditional drift (Sharpe 0.08 per period) did not create a
 dip at z = 1e-3 (`figures/sim_theory_mu0.08.png`). Figures: `figures/sim_theory.png`, `..._z-12_-8_-4_-3.png`. So the real-data dip at c = 1
-(section 1) is not reproduced by my simulator at the same z, and I do not know why.
+(section 1) is not reproduced by our simulator at the same z, and we do not know why.
 
 ### 4. Feature normalisation vs the paper's figures (`python -m experiments.scaling_check`, `figures/scaling_check.png`)
 
 The paper's eq. (37) divides the features by √P, but P could be the model's width, the 7p weights, or
-something else. My main runs use √L (the model's own width), which makes the effective ridge independent
+something else. Our main runs use √L (the model's own width), which makes the effective ridge independent
 of L. Against the paper's Figure 3B (momentum signals) this choice is **not** what the figure looks like: in the
 paper the z = 10 and z = 100 curves differ from z = 1e3 at high complexity (≈ 0.20 and 0.25 against 0.30 at c = 1000) and
 the curves for z = 1 … 100 fall with c after a peak around c = 3–10, whereas with √L every z ≥ 10 curve coincides and is flat.
@@ -302,7 +303,7 @@ Reading (this table changed from the eq. (36) runs, where κ = 1 gave 0.030 at z
 under 1/√L it peaks at 9.6 (c = 2) and plateaus at 7.8, and under κ = 7p it peaks late (16.3 at c = 16). The paper's ‖β‖ falls to ≈ 1 by c = 50 for
 momentum; κ = 1 is the closest. What does not depend on the normalisation: the best attainable Sharpe is ≈ 0.342 under every one of them (the
 z = 1e3 plateau, κ = 1 reaches 0.331), so the "no edge over always long (0.353)" and the placebo conclusions do not change; what changes is how the
-curves depend on z and c. **I have not rerun the whole pipeline with κ = 1**, so the main figures use 1/√L; that, and checking κ = 1
+curves depend on z and c. **We have not rerun the whole pipeline with κ = 1**, so the main figures use 1/√L; that, and checking κ = 1
 on the Welch–Goyal panel, is the obvious next step. The paper does not state its normalisation, so κ = 1 is a candidate, not a finding.
 
 ### 5. Kernel check, and eq. 36 vs eq. 37 literal (`python -m experiments.kernel_check`)
@@ -324,7 +325,7 @@ uniform weights, under both conventions: on 20 factors it uses 11.1 of the 12 pa
 (eq. 36: 0.956 and 0.959). So the large-z strategy is essentially a trailing mean whatever the signals are.
 
 **Why eq. 37 is the main convention.** The paper's own text says that "when γ is close to zero, (8)–(9) is approximately equivalent to a linear
-model". That holds for frequencies γω (small γ = low frequency = nearly linear, row 2 above) and not for ω/√γ. I first followed eq. (36)
+model". That holds for frequencies γω (small γ = low frequency = nearly linear, row 2 above) and not for ω/√γ. We first followed eq. (36)
 and changed to the literal eq. (37) after the kernel check, then reran everything. Same 159 factors, T = 12, momentum signals:
 
 | | eq. 36 (20 draws) | eq. 37 literal (100 draws; main) | paper (by eye) |
@@ -361,40 +362,40 @@ high complexity is close to the mean Sharpe of the 159 factors in its own Table 
 ## What didn't work, or didn't match
 
 1. **The size of the effect for momentum signals.** 2.1× gain in Sharpe at T = 12, not ≈ 3×, and +0.018 to +0.068 at
-   T = 60 and 120. With Welch–Goyal signals the 3.1× gain matches. I do not know whether the momentum gap is my signal construction,
-   my feature normalisation (section 4), or the sample.
+   T = 60 and 120. With Welch–Goyal signals the 3.1× gain matches. We do not know whether the momentum gap is our signal construction,
+   our feature normalisation (section 4), or the sample.
 2. **No demonstrated timing edge.** The best model (0.342 for momentum, 0.368 for Welch–Goyal) is −0.011 and +0.019 from always long
    (0.353 and 0.349), s.e. 0.017–0.018, so within noise. This does not show the model *loses*; it shows the paper's evidence does
    not include a baseline that would let one say it wins.
-3. **The z-dependence of the curves and ‖β‖.** My curves for z ≥ 10 coincide and ‖β‖ plateaus; the paper's differ and fall. Section 4 finds
-   an unscaled-feature version (κ = 1) that reproduces them under eq. (37), but I did not rerun the pipeline with it, so the main
+3. **The z-dependence of the curves and ‖β‖.** Our curves for z ≥ 10 coincide and ‖β‖ plateaus; the paper's differ and fall. Section 4 finds
+   an unscaled-feature version (κ = 1) that reproduces them under eq. (37), but we did not rerun the pipeline with it, so the main
    figures do not have this. **Partly resolved.**
-4. **The double-ascent dip.** On real data the z = 1e-3 minimum is at c = 1, as in the paper. In my simulator, the dip at c = 1 appears
+4. **The double-ascent dip.** On real data the z = 1e-3 minimum is at c = 1, as in the paper. In our simulator, the dip at c = 1 appears
    only at large ridge (t = −2.5) and not at z ≤ 1e-3 (t = −0.6), so the theory's prediction (2) is not reproduced there, whereas ‖β‖ blows up at
    c = 1 as predicted. **Unresolved.**
 5. **The rise with c is mostly there without any signal information** (placebo, section 3.2).
-6. **My own first results were partly wrong.** The first 159-factor run used 5 feature seeds and the placebo a
-   single seed, so the smallest-model points compared different random draws and I reported a "2× rise" and a
+6. **Our own first results were partly wrong.** The first 159-factor run used 5 feature seeds and the placebo a
+   single seed, so the smallest-model points compared different random draws and we reported a "2× rise" and a
    "+14 sd" real-vs-placebo gap that were seed artifacts (corrected; section 3.4).
-7. **I changed the main kernel convention after seeing results.** I started with eq. (36), compared with the paper's figures, and switched to the
+7. **We changed the main kernel convention after seeing results.** We started with eq. (36), compared with the paper's figures, and switched to the
    literal eq. (37) because it fits better (section 5). That is a choice informed by the target, not a blind replication; the eq. (36)
    results are kept as a sensitivity set.
 8. **Why the placebo matches** is tested (section 5): at infinite ridge the kernel position is a near-uniform average of the last T returns
    (correlation 0.96 with the trailing mean, real or shuffled). Still untested: (a) which bandwidths drive it, (b) why very small models
    do poorly (I suspect random-sign kernel weights at L = 2).
-9. **Not done:** see "What I did not do". All conclusions are limited to US equity factors.
+9. **Not done:** see "What we did not do". All conclusions are limited to US equity factors.
 
-## Where the paper is ambiguous, and what I chose
+## Where the paper is ambiguous, and what we chose
 
 | Item | Choice |
 |---|---|
-| **Feature scaling** | Paper: S = P^{-1/2} h. I scale by the width L of the model being fitted (G = G_raw / L). With a fixed 1/√P_total, "z = 1e-3" is not near-ridgeless at small L and R² does not explode at c = 1. This is an **inference**, not stated in the paper, and section 4 shows it does not reproduce the paper's z = 10 / 100 curves; an unscaled version (κ = 1) does. **Partly resolved.** |
+| **Feature scaling** | Paper: S = P^{-1/2} h. We scale by the width L of the model being fitted (G = G_raw / L). With a fixed 1/√P_total, "z = 1e-3" is not near-ridgeless at small L and R² does not explode at c = 1. This is an **inference**, not stated in the paper, and section 4 shows it does not reproduce the paper's z = 10 / 100 curves; an unscaled version (κ = 1) does. **Partly resolved.** |
 | **Eq. (36) vs (37)** | Taken literally, eq. (37) (frequencies γ·ω, ω ~ N(0, I)) gives a kernel exp(−γ²‖Δx‖²/2), not eq. (36)'s exp(−‖Δx‖²/(2γ)). Main runs use the literal eq. (37) (`convention="paper"`); eq. (36) is `convention="kernel"` (files `_eq36`). Section 5 shows why. |
 | **Number of features** | Each of the P = 7p weights gives a (sin, cos) pair, so 2P columns; L counts columns. |
-| **Eq. (15)** | The sum over τ = 1…t−37 (divided by t−37) read literally is the mean over observations 37…t−1: it drops the *first* 36 observations. I use an expanding RMS of all data strictly before t with ≥ 36 observations; for Mom the two differ by ≤ 15% (median 1%) after 120 observations. |
-| **Welch–Goyal predictors** | The paper's footnote lists dfy, infl, svar, de, lty, tms, tbl, dfr, dp, dy, ltr, ep, b/m, ntis plus one lag of the market return. Built from Goyal's monthly spreadsheet: dfy = BAA − AAA, tms = lty − tbl, dfr = corpr − ltr, dp = log D12 − log Index, dy = log D12 − log lagged Index, ep = log E12 − log Index, de = log D12 − log E12. `infl` is lagged one month (publication delay), "market return" is the CRSP S&P value-weighted return of month t, signals are standardised by an expanding RMS over the full 1926-12 history and clipped at ±5, and the sample stops at 2020-12 as in the paper. These are my choices; the downloaded vintage is not the paper's. |
-| **R² denominator** | Eq. (41) is garbled in the PDF; the text after eq. (52) implies the uncentred 1 − MSE/E[R²]. I centre on the sample mean. When π ≈ 0 (large z) centred gives ≈ −0.02 and uncentred 0.000. |
-| **Annualisation** | Not stated for Fig. 3. I annualise monthly Sharpe by √12. |
+| **Eq. (15)** | The sum over τ = 1…t−37 (divided by t−37) read literally is the mean over observations 37…t−1: it drops the *first* 36 observations. We use an expanding RMS of all data strictly before t with ≥ 36 observations; for Mom the two differ by ≤ 15% (median 1%) after 120 observations. |
+| **Welch–Goyal predictors** | The paper's footnote lists dfy, infl, svar, de, lty, tms, tbl, dfr, dp, dy, ltr, ep, b/m, ntis plus one lag of the market return. Built from Goyal's monthly spreadsheet: dfy = BAA − AAA, tms = lty − tbl, dfr = corpr − ltr, dp = log D12 − log Index, dy = log D12 − log lagged Index, ep = log E12 − log Index, de = log D12 − log E12. `infl` is lagged one month (publication delay), "market return" is the CRSP S&P value-weighted return of month t, signals are standardised by an expanding RMS over the full 1926-12 history and clipped at ±5, and the sample stops at 2020-12 as in the paper. These are our choices; the downloaded vintage is not the paper's. |
+| **R² denominator** | Eq. (41) is garbled in the PDF; the text after eq. (52) implies the uncentred 1 − MSE/E[R²]. We centre on the sample mean. When π ≈ 0 (large z) centred gives ≈ −0.02 and uncentred 0.000. |
+| **Annualisation** | Not stated for Fig. 3. We annualise monthly Sharpe by √12. |
 | **Timing** | Signals at t, target y[t] = r[t+1]/σ_t, trained on pairs t−T…t−1 (all known at t). `tests/` checks that changing future data does not change a past forecast. |
 
 ## Tests
@@ -410,11 +411,14 @@ real runs share one seed pool; the Welch–Goyal predictors follow their definit
 ```
 voc/            reusable modules (features, ridge, kernel, metrics, preprocess, simulate)
 experiments/    curves (the replication: paper Figs 1-5 on 159 factors), common (shared helpers),
-                check_table1, report_numbers, and beyond the paper: sim_theory, placebo, exact_kernel, kernel_check, scaling_check
+                check_table1, report_numbers, and beyond the paper: sim_theory, placebo, exact_kernel, kernel_check, scaling_check;
+                plot_paper_axes and plot_scaling_slide redraw saved results on the paper's axes (used by the slides and notebook)
 data/           fetch_data.py + ff_factors_monthly.csv, jkp_factors_usa_monthly.csv, welch_goyal_monthly.csv, paper_table1.csv (committed)
 figures/        generated figures, .npz result arrays, full-run logs, report_numbers*.log
 notebooks/      virtue_of_complexity.ipynb: walkthrough of the implementation and all results
                 (live code checks; heavy results are re-plotted from figures/*.npz)
+slides/         presentation (LaTeX/Beamer source and PDF, speaker script, paper figure crops)
+paper/          the paper under replication (SSRN 4166368) and its companion (NBER 30217)
 tests/          unit tests
 run_all.py      single entry point
 AI_USAGE.md     AI usage disclosure
