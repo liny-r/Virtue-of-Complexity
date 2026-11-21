@@ -1,10 +1,14 @@
 \documentclass[aspectratio=169,10pt]{beamer}
 \usetheme{metropolis}
 \usepackage{amsmath,amssymb,booktabs}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
 \graphicspath{{../figures/}{./}}
 \setbeamertemplate{navigation symbols}{}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\E}{\mathbb{E}}
+\newcommand{\spk}{}
+\setbeamertemplate{frame footer}{\spk}
 
 \title{The Virtue of Complexity Everywhere}
 \subtitle{Factor timing with random features: the paper and our equity replication}
@@ -14,13 +18,15 @@
 
 \begin{document}
 \maketitle
+\addtocounter{framenumber}{1}
 
 % ================= Luwei: 1-3 =================
+\renewcommand{\spk}{Presenter: Luwei Cai}
 \begin{frame}{The question: can a huge model forecast with little data?}
 \textbf{Financial question.} Can we time US equity factors out of sample?
 \begin{itemize}
   \item Returns are noisy, histories are short (the paper's key case: $T=12$ months)
-  \item Textbook (Occam): few parameters, $P\ll T$, otherwise you fit noise
+  \item Textbook (Occam): few parameters, $L\ll T$, otherwise you fit noise
 \end{itemize}
 \vspace{4pt}
 \textbf{Lecture view (Part III).} No return model is correctly specified.
@@ -29,23 +35,24 @@
   \item \emph{Misspecified} (returns): richer models remove approximation error; with shrinkage that gain can outrun the added noise
 \end{itemize}
 \vspace{4pt}
-\textbf{Paper (Kelly--Malamud--Zhou 2022):} take $P\gg T$ and test it on 159 equity factors.\\
+\textbf{Paper (Kelly--Malamud--Zhou 2022):} take $L\gg T$ and test it on 159 equity factors.\\
 \alert{A conditional claim:} Sharpe rises with complexity \emph{when ridge shrinkage is large enough}.
 \end{frame}
 
-\begin{frame}{Setup and notation (as in the lecture)}
+\begin{frame}{Setup and notation (as in the paper)}
 \begin{tabular}{@{}ll@{}}
-$G_t\in\R^{d}$ & raw signals at $t$: $d=15$ (Welch--Goyal) or $d=2$ (momentum) \\
+$X_t\in\R^{d}$ & raw signals at $t$: $d=15$ (Welch--Goyal) or $d=2$ (momentum) \\
 $R_{t+1}$ & next-month factor return, scaled by ex-ante volatility \\
-$S_t\in\R^{P}$ & random features built from $G_t$ \\
+$S_t\in\R^{L}$ & the $L$ random features used, built from $X_t$ \\
+$P=7p$ & random weights $\omega_i$ per draw ($p$ per bandwidth); each gives a sin and a cos feature \\
 $T$ & months in the rolling training window ($12,\,60,\,120$) \\
-$c=P/T$ & complexity; $c=1$ is the interpolation boundary \\
+$c=L/T$ & complexity; $c=1$ is the interpolation boundary \\
 $z$ & ridge penalty ($10^{-3}$ to $10^{3}$) \\
-$\hat\beta_t$ & the only learned weights ($P$ of them) \\
+$\hat\beta_t$ & the only learned weights ($L$ of them) \\
 \end{tabular}
 \vspace{6pt}
 \begin{itemize}
-  \item Raising $P$ adds transformations of the \emph{same} $d$ signals, not new data
+  \item Raising $L$ adds transformations of the \emph{same} $d$ signals, not new data
   \item \textbf{Two separate studies, 159 factors, one model per factor:} A = 15 Welch--Goyal signals; B = 2 momentum signals (current month, prior 11-month mean). Never combined.
 \end{itemize}
 \end{frame}
@@ -62,41 +69,57 @@ $\hat\beta_t$ & the only learned weights ($P$ of them) \\
 \end{frame}
 
 % ================= Hongjun: 4-6 =================
+\renewcommand{\spk}{Presenter: Hongjun Ding}
 \begin{frame}{Model: fixed random features, learned ridge weights}
-\textbf{Features (fixed, sampled once).} For $\omega_i\sim N(0,I_d)$ and bandwidth $\gamma$,
-\[
-S_{i,t}=\big(\sin(\gamma\,\omega_i^\top G_t),\ \cos(\gamma\,\omega_i^\top G_t)\big),\qquad S_t\in\R^{P}\ \text{(each }\omega_i\text{ gives two features)}
-\]
-7 bandwidths ($\gamma\in\{0.1,\dots,16\}$); nested models: first $P$ columns of one draw.\\[4pt]
-\textbf{Learned (ridge on the last $T$ months).}
+\centering
+\begin{tikzpicture}[font=\scriptsize,
+  box/.style={draw,rounded corners=2pt,align=center,inner sep=4pt,minimum height=1.5cm},
+  fix/.style={box,fill=black!6},
+  lrn/.style={box,fill=orange!20},
+  arr/.style={-{Stealth},thick}]
+\node[box,text width=1.9cm] (g) {signals\\[1pt]$X_t\in\R^{d}$\\[1pt]{\tiny $d=2$ or $15$}};
+\node[fix,text width=5.3cm,right=0.4cm of g] (f) {\textbf{Fixed, sampled once per seed}\\[1pt]
+ draw $P=7p$ weights $\omega_i\sim N(0,I_d)$, 7 bandwidths $\gamma$\\[1pt]
+ $\big(\sin(\gamma\,\omega_i^\top X_t),\ \cos(\gamma\,\omega_i^\top X_t)\big)$\\[1pt]
+ shuffle pairs, keep the first $L$ columns};
+\node[box,text width=1.9cm,right=0.4cm of f] (s) {features\\[1pt]$S_t\in\R^{L}$\\[1pt]{\tiny $L\le 2P$}};
+\node[lrn,text width=2.5cm,right=0.4cm of s] (b) {\textbf{Learned}\\[1pt]ridge $\hat\beta_t\in\R^{L}$\\[1pt]$\hat\pi_t=S_t^\top\hat\beta_t$};
+\draw[arr] (g)--(f); \draw[arr] (f)--(s); \draw[arr] (s)--(b);
+\end{tikzpicture}
+
+{\scriptsize Same $\omega$ for every factor at a given seed; 100 seeds; metrics averaged over seeds, then over the 159 factors}
+
+\vspace{4pt}
+\raggedright
+\textbf{Learned: ridge on the last $T$ months.}
 \[
 \hat\beta_t(z)=\Big(zI+\tfrac1T\sum_{\tau=t-T}^{t-1}S_\tau S_\tau^\top\Big)^{-1}\tfrac1T\sum_{\tau=t-T}^{t-1}S_\tau R_{\tau+1}
 \ \Longleftrightarrow\ \min_\beta\ \tfrac1T\sum_\tau (R_{\tau+1}-\beta^\top S_\tau)^2+z\|\beta\|^2
 \]
 \begin{itemize}
-  \item Nonlinear in $G_t$, linear in $\hat\beta$: a two-layer network with a frozen random first layer
+  \item Nonlinear in $X_t$, linear in $\hat\beta$: a two-layer network with a frozen random first layer
   \item Loss is squared error. \alert{Sharpe is not optimised}; it is only evaluated
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Timing strategy and what we measure}
 \centering
-\begin{tabular}{ccc}
-\textbf{1. Forecast} & \textbf{2. Position} & \textbf{3. Strategy return}\\[2pt]
-$\hat\mu_t=S_t^\top\hat\beta_t$ & $\pi_t=\hat\mu_t$ & $R^{\pi}_{t+1}=\pi_t\,R_{t+1}$
+\begin{tabular}{cc}
+\textbf{1. Forecast = position} & \textbf{2. Strategy return}\\[2pt]
+$\hat\pi_t=S_t^\top\hat\beta_t$ & $\hat R_{t+1}=\hat\pi_t\,R_{t+1}$
 \end{tabular}
 
 \vspace{8pt}
 \raggedright
 \begin{itemize}
   \item \textbf{Timeline:} train on pairs up to $t$ (returns already realised), forecast at $t$, earn at $t+1$. No look-ahead
-  \item \textbf{Metrics:} out-of-sample $R^2$, $\|\hat\beta\|$, expected return, volatility, annualised Sharpe of $R^\pi$
+  \item \textbf{Metrics:} out-of-sample $R^2$, $\|\hat\beta\|$, expected return, volatility, annualised Sharpe of $\hat R$
   \item \textbf{Aggregation:} Sharpe per seed per factor, averaged over seeds, then over factors (not the Sharpe of a 159-factor portfolio)
   \item \textbf{Scale:} multiplying $\hat\beta$ by a positive constant changes $R^2$ and $\|\hat\beta\|$, but not Sharpe
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Why can $P\gg T$ work?}
+\begin{frame}{Why can $L\gg T$ work?}
 \begin{itemize}
   \item At $c=1$ with tiny $z$ the model interpolates the sample: $\|\hat\beta\|$ and volatility spike, $R^2$ crashes (\textbf{double descent})
   \item For $c>1$ the ridge (minimum-norm) solution gets smoother and $\|\hat\beta\|$ falls
@@ -109,25 +132,23 @@ $\hat\mu_t=S_t^\top\hat\beta_t$ & $\pi_t=\hat\mu_t$ & $R^{\pi}_{t+1}=\pi_t\,R_{t
 \end{frame}
 
 % ================= Yueqi: 7-9 =================
+\renewcommand{\spk}{Presenter: Yueqi Lin}
 \begin{frame}{Our implementation (equities only)}
 \begin{itemize}
-  \item Written from the paper's equations: features (36--37), rolling ridge in dual $T\times T$ form (so $P=7{,}000$ is cheap), metrics (41--51)
+  \item Written from the paper's equations: features (36--37), rolling ridge in dual $T\times T$ form (so $L=7{,}000$ is cheap), metrics (41--51)
   \item Same 159 factors and same two signal sets (A, B)
   \item $T=12$: 100 feature draws; $T=60,120$: 10 draws
-  \item \textbf{Cuts:} $P\le7{,}000$ (paper 12{,}000); futures and bonds not replicated (paid data)
+  \item \textbf{Cuts:} $L\le7{,}000$ (paper 12{,}000); futures and bonds not replicated (paid data)
   \item \textbf{Beyond the paper:} baselines, time-shuffled placebo, exact-kernel check, simulator
 \end{itemize}
-\vspace{6pt}
-\textbf{Ambiguity we hit.} Eq.\ 36 and eq.\ 37 imply different kernels. We implement eq.\ 37 literally and check eq.\ 36.
 \end{frame}
 
 \begin{frame}{Sharpe vs.\ complexity at $T=12$: paper (top) and ours (bottom)}
 \centering
 \includegraphics[width=0.74\textwidth]{paper_fig3.png}\hspace{4pt}\raisebox{0.2em}{\includegraphics[height=0.2\textheight]{paper_legend.png}}\\[-1pt]
 {\scriptsize Paper Fig.\ 3, panels A (Welch--Goyal) and B (momentum); broken $c$ axis. Same colour code in both rows}\\[3pt]
-\includegraphics[height=0.37\textheight]{fig3_T12_wg.png}\hspace{4pt}
-\includegraphics[height=0.37\textheight]{fig3_T12.png}\\
-{\scriptsize Ours: mean OOS Sharpe over 159 factors, log $c$ axis. Left A, right B.}
+\includegraphics[width=0.8\textwidth]{fig3_T12_paperaxes.png}\\[-1pt]
+{\scriptsize Ours: mean OOS Sharpe over 159 factors, same axes (linear $c$ to 50, break, largest model $c=500$ at right; paper 1{,}000)}
 \end{frame}
 
 \begin{frame}{Replication: close at $T=12$, weaker at longer $T$}
@@ -143,16 +164,39 @@ B: Momentum & 0.166 $\to$ 0.342 & $\approx$0.10 $\to$ 0.30 & +0.068 & +0.018 \\
 
 {\footnotesize $T=12$: $c_{\min}\to c_{\max}$; $T=60,120$: rise. Paper values read off the figure by eye.}
 
-\vspace{4pt}
-\raggedright
+\vspace{2pt}
+\raggedright\small
 \begin{itemize}
-  \item 96--98\% of factors improve at $T=12$; small $z$: dip at $c=1$ (0.093), then recovery
-  \item Gain shrinks as $T$ grows, as in the paper's Fig.\ 5; at $T=120$, $z=10^{-3}$ Sharpe even falls
-  \item \textbf{Not matched:} $\|\hat\beta\|$ plateaus here but falls in the paper; the paper's $z$ axis sits about three decades higher
+  \item \textbf{Sharpe (Fig.\ 3):} 96--98\% of factors improve; small $z$: dip at $c=1$ (0.093 vs paper $\approx$0.07), then recovery
+  \item \textbf{$R^2$ (Fig.\ 1):} collapses near $c=1$ ($-1.67$) while Sharpe stays positive; $-0.18$ at $c=500$ (paper $\approx-0.45$)
+  \item \textbf{Return, volatility (Fig.\ 2):} expected return matches at low $z$ (0.039 vs $\approx$0.04); volatility is lower (0.63 vs $\approx$0.8--0.9)
+  \item \textbf{Longer windows (Fig.\ 5):} same direction, much smaller gain; Sharpe falls at $T=120$, $z=10^{-3}$
+  \item \textbf{Not matched:} $\|\hat\beta\|$ plateaus (paper: falls); $z\ge1$ curves coincide (paper: fan out)
 \end{itemize}
 \end{frame}
 
-% ================= Hao: 10-13 =================
+\begin{frame}{Feature scaling: we use $1/\sqrt{L}$ (our main runs)}
+\centering
+\includegraphics[width=0.68\textwidth]{scaling_slide.png}\\[-2pt]
+{\scriptsize Ours, $T=12$, momentum. Left: main, $1/\sqrt{L}$: the kernel-consistent scaling (Rahimi--Recht; Sutherland--Schneider). Right: raw features ($\kappa=1$), a check with 10 draws}
+\vspace{2pt}
+
+{\scriptsize
+\begin{tabular}{lccccccc}
+\toprule
+Sharpe at $c=500$ ($c=1000$ paper) & $z{=}10^3$ & $10^2$ & $10^1$ & $1$ & $10^{-1}$ & $10^{-2}$ & $10^{-3}$ \\
+\midrule
+Paper (by eye) & 0.30 & 0.25 & 0.20 & 0.17 & 0.17 & 0.16 & 0.15 \\
+Ours, main ($1/\sqrt L$) & 0.342 & 0.342 & 0.342 & 0.342 & 0.322 & 0.249 & 0.213 \\
+Ours, raw ($\kappa=1$) & 0.331 & 0.264 & 0.218 & 0.202 & 0.192 & 0.186 & 0.184 \\
+\bottomrule
+\end{tabular}}
+
+\vspace{2pt}
+
+{\scriptsize The paper does not state its scaling, so raw features are only a candidate. Best Sharpe is $\approx0.342$ under every scaling: our conclusions do not depend on it.}
+\end{frame}
+
 \begin{frame}{Beyond the paper: is the baseline fair?}
 \centering
 \begin{tabular}{lccc}
@@ -176,7 +220,7 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 
 \begin{frame}{Beyond the paper: placebo with time-shuffled signals}
 \centering
-\includegraphics[width=0.97\textwidth]{placebo.png}
+\includegraphics[width=0.97\textwidth]{placebo_paperaxes.png}
 \vspace{-2pt}
 \begin{itemize}\small
   \item Same rise with shuffled signals: $+0.177$ placebo vs $+0.176$ real ($z=10^3$, $T=12$)
@@ -184,13 +228,15 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \end{itemize}
 \end{frame}
 
+% ================= Hao =================
+\renewcommand{\spk}{Presenter: Hao Li}
 \begin{frame}{Critique}
 \begin{enumerate}
   \item \textbf{Mostly shrinkage.} The rise with $c$ is largely features converging to a kernel; learned predictability is a small part
   \item \textbf{Baseline.} Complexity levels are compared with each other, not with always-long
   \item \textbf{Hindsight} in factor selection and signs
   \item \textbf{No transaction costs} on a monthly-refit nonlinear position
-  \item \textbf{Specification ambiguity} (eq.\ 36 vs 37; feature scaling) moves the $z$ axis
+  \item \textbf{Specification ambiguity:} the paper does not state its feature scaling or which kernel (eq.\ 36 vs 37); this moves the $z$ axis
   \item \textbf{Data:} 2022 paper vs.\ our 2026 data vintage
 \end{enumerate}
 \end{frame}
@@ -208,20 +254,22 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 
 % ================= Backup =================
 \appendix
+\renewcommand{\spk}{Presenter: Yueqi Lin}
 \begin{frame}{Backup A: $R^2$ and $\|\hat\beta\|$ ($T=12$, ours)}
 \centering
-\includegraphics[width=0.9\textwidth]{fig1_T12.png}\\
-{\small $R^2$ at $z=10^{-3}$: $-1.67$ at $c=1$, $-0.18$ at $c=500$. $\|\hat\beta\|$ peaks near $c=2$.}
+\includegraphics[height=0.72\textheight]{fig1_T12_paperaxes.png}\\
+{\small Top: $R^2$; bottom: $\|\hat\beta\|$. Panel A Welch--Goyal, panel B momentum. At $z=10^{-3}$ (momentum): $R^2=-1.67$ at $c=1$, $-0.18$ at $c=500$.}
 \end{frame}
 
+\renewcommand{\spk}{Presenter: Hongjun Ding}
 \begin{frame}{Backup B: why squared error and Sharpe can disagree}
 \[
-\E\big[(R_{t+1}-\hat\mu_t)^2\big]=\E[R_{t+1}^2]-2\,\E[\hat\mu_t R_{t+1}]+\E[\hat\mu_t^2]
+\E\big[(R_{t+1}-\hat\pi_t)^2\big]=\E[R_{t+1}^2]-2\,\E[\hat\pi_t R_{t+1}]+\E[\hat\pi_t^2]
 \]
 \begin{itemize}
   \item The middle term is timing skill; the last is forecast magnitude
   \item A well-directed but badly scaled forecast has poor $R^2$ and a good Sharpe
-  \item Scaling $\hat\mu_t$ by a positive constant leaves the Sharpe of $\pi_tR_{t+1}$ unchanged, which is why curves for $z\ge10$ coincide in our results
+  \item Scaling $\hat\pi_t$ by a positive constant leaves the Sharpe of $\hat\pi_tR_{t+1}$ unchanged, which is why curves for $z\ge10$ coincide in our results
   \item So the paper reports both prediction ($R^2$) and economic (Sharpe, return, volatility) measures
 \end{itemize}
 \end{frame}
