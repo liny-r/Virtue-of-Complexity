@@ -99,34 +99,33 @@ The comparison is larger versus smaller models within the same family. It does n
 
 Slide 14 — Our implementation (11:20–12:05) — Yueqi Lin
 
-First, I want to make clear the notation we use here. T is the number of months in the training window: twelve, sixty or one hundred twenty. This part is consistent with the paper. L is the number of random features the model uses, from 2 up to 7,000. Note that to reduce run time, we have capped L at 7,000, where the paper goes up to 12,000. We don't expect this to introduce much discrepancies in the results because we saw the performance already stabilized at 7000.  
-And c is the complexity, which equals L over T, the number of features per observation window. 
+First, I want to make clear the parameters we use here. T is the number of months in the training window: twelve, sixty or one hundred twenty. This part is consistent with the paper. L is the number of random features the model uses, from 2 up to 7,000. Note that to reduce run time, we have capped L at 7,000, where the paper goes up to 12,000. We don't expect this to introduce much discrepancies in the results because we saw the performance stabilizing at 7000.  
+And c is the complexity, which equals L over T, representing the number of features per observation window. 
 
 We use the same 159 factors and the same two signal sets as the paper. Study A uses the Welch–Goyal macro variables. Study B uses the momentum signals.
 
-For the random Fourier features, we use 100 feature draws at T equal to twelve, as in the paper. At sixty and one hundred twenty we use ten draws, to save time; the paper uses 100 there too.
+For the random Fourier features, we use 100 feature draws at T equal to twelve, as in the paper. At sixty and one hundred twenty we use ten draws, to save time; the paper uses 100 there too. 
 
 
 Slide 15 — OOS Sharpe vs complexity, paper and ours (12:05–13:20)  [notebook section 3]
 
-Let's now compare the main results against the paper. On top is the paper's out-of-sample average Sharpe Ratio, Study A and B, for T equal to twelve.  Each line is a different ridge penalty z. Below are our versions on the same axes. 
+Let's now compare the main results against the paper. On top is the paper's out-of-sample average Sharpe Ratio, Study A and B, for T equal to twelve. Below are our versions on the same axes. 
 
 The shape generally matches. With small ridge penalty, it first increases and then there is a dip right at c equal to one, then rises steadily, which exhibits a double ascent shape. With large ridge penalty, Sharpe rises steeply and then flattens. The double ascent turns into a permanent ascent. In our replication, the large-z curves lie on top of each other. In the paper the large-z curves do not all coincide. We think this is simply to do with a scaling factor in the random fourier features.
 
 
 Slide 16 — Expected return and volatility (13:20–14:05)  [notebook section 3]
 
-Next is expected return and volatility, again with the paper on the left and ours on the right. At small ridge penalty, expected return stays near 0.04 per month as c grows, while volatility falls from a spike at c equal to one. So past c equal to one, the Sharpe rise comes from lower volatility, not higher return. That fits the shrinkage story: the position gets smoother and smaller as complexity increases. At large z, both go toward zero in ours, while the paper's curves for z of 10 and 100 stay higher. That is the feature scaling again, which is in a backup slide.
+Next is expected return and volatility, again with the paper on the left and ours on the right. At small ridge penalty, expected return stays near 0.04 per month as c grows, while volatility falls from a spike at c equal to one. So past c equal to one, the Sharpe rise comes from lower volatility, not higher return. The position gets smoother and smaller as complexity increases. At large z, both volatility and expected return are lower in ours, while the paper's stay higher. We think that is to do with feature scaling again.
 
 
 Slide 17 — Sharpe at large z, paper vs ours (14:05–15:05)  [notebook sections 3 and 4]
 
-This is the comparison table for Sharpe as we increase to large ridge penalty z, for each training window 12, 60 and 120. At T equal to twelve, our Welch–Goyal increased a by factor of 3.1, against about 3 times in the paper, which is consistent. However, our momentum increased by a factor of 2.1, against also about 3 times in the paper. 
+This is the comparison table for Sharpe as we increase to large ridge penalty z, for each training window. At T equal to twelve, our Welch–Goyal increased a by factor of 3.1, against about 3 times in the paper, which is consistent. However, our momentum increased by a factor of 2.1, against also about 3 times in the paper. 
 
-At sixty and one hundred twenty months the gain shrinks a lot: Welch–Goyal increased by 1.26 times sixty and 1.1 times at one hundred twenty, and momentum 1.25 times and 1.05 times. We see the effect deteriorating at longer training windows. This is consistent with the paper's finding that complex models perform particularly well when estimated over extremely short windows. 
+At sixty and one hundred twenty months the gain shrinks a lot: Welch–Goyal increased by 1.26 times at sixty and 1.1 times at one hundred twenty, and momentum 1.25 times and 1.05 times. We see the effect deteriorating at longer training windows. This is consistent with the paper's finding that complex models perform particularly well when estimated over extremely short windows. 
 
-[The reason is that complex models leverage high dimensionality of the signal space in the same way classic models leverage long time
-series.]
+[The reason is that complex models leverage high dimensionality of the signal space in the same way classic models leverage long time series.]
 
 [Handoff] "Hao will go through our critique."
 
@@ -174,13 +173,13 @@ Likely questions, with the best person to answer
 BACKUP SLIDES (in the order of the deck; not part of the timed talk)
 ----------------------------------------------------------------------
 
-Backup — Baselines: does complexity beat simple baselines?
+Backup — Baselines: does complexity beat simple baselines? (deck p. 21)
 
 Now a question the paper does not ask. Its panels compare small and large models within the same family. They do not include an always-long benchmark.
 
 So we added it. At T equal to twelve the model gets 0.342. Linear ridge on the same signals gets 0.11 to 0.16. And simply staying long the volatility-scaled factor gets 0.353. The model clearly beats linear, and ties always-long: minus 0.011 with a standard error of 0.017. One caveat: always-long is flattering, because the factors are signed using what the literature found worked.
 
-Backup — Placebo with time-shuffled signals
+Backup — Placebo with time-shuffled signals (deck p. 22)
 
 We replaced the real signals with time-shuffled versions, which destroys any predictability, and reran everything. The solid lines are the real signals and the dashed lines the shuffled placebo, with the same colour for each ridge level.
 
@@ -188,11 +187,11 @@ The shapes are identical: most of the upward slope is a shrinkage effect. As c g
 
 At large z, real signals add roughly 0.02 on top. That is detectable but small. At longer windows the real-signal edge is larger, about 0.05 to 0.07.
 
-Backup — Critique (earlier version)
+Backup — Critique (earlier version) (deck p. 23)
 
 Where is the paper vulnerable? One, most of the headline curve is shrinkage, as the placebo shows. Two, the comparison is across complexity levels, not against the obvious benchmark. Three, the factor list and signs use hindsight. Four, there are no transaction costs, on a nonlinear position refit monthly. Five, the paper does not state its feature scaling or which kernel it uses, and as Yueqi showed, that moves the ridge axis. Six, our data vintage is newer than the paper's, so small differences are expected.
 
-Backup — Takeaways
+Backup — Takeaways (deck p. 24)
 
 To wrap up. Replicated: at T equal to twelve on 159 equity factors, Sharpe rises with complexity by two to three times, with the double-descent dip at small ridge. Qualified: the gain fades at longer windows and needs large ridge. Not shown: that complexity beats simply holding the factor, or that the rise is learned timing.
 
@@ -200,19 +199,19 @@ The lesson from implementing it: the shape of the curve is robust, but its econo
 
 ions.
 
-Backup — Why squared error and Sharpe can disagree
+Backup — Why squared error and Sharpe can disagree (deck p. 25)
 
 Mean squared error is E[R²] − 2E[π̂R] + E[π̂²]: realised-return variation, a timing term, and forecast magnitude. A forecast with the right direction but wrong scale has poor R² and a good Sharpe, and scaling π̂ by a positive constant leaves the Sharpe of π̂_t R_{t+1} unchanged.
 
-Backup — R² and coefficient norm  [notebook section 3]
+Backup — R² and coefficient norm (deck p. 26)  [notebook section 3]
 
 Let's now look at metrics other than Sharpe. On the left is the paper's Figure 1, on the right is ours, in the same layout: The first column shows R squared and the second column is the magnitude of the coefficient vector. R squared is negative here, which is normal for return prediction. With small ridge penalty, R squared collapses near c equal to one and the coefficient norm spikes. Past c = 1 both recover; but our size of beta plateaus where the paper’s keeps falling toward 0.
 
-Backup — Beyond Sharpe: the other metrics  [notebook section 3]
+Backup — Beyond Sharpe: the other metrics (deck p. 27)  [notebook section 3]
 
 This table compares the other metrics at z of 10 to the minus three, at T equal to twelve. The Sharpe dip at c equal to one, expected return and volatility are close to the paper's, and so is R squared for Welch–Goyal. What does not match is the coefficient norm: it plateaus in ours but falls in the paper. The large-z curves also coincide in ours, but not in the paper. The paper does not state its feature scaling, so we tested alternatives; the best Sharpe does not change. The details are in a backup slide.
 
-Backup — Feature scaling: why we use 1/√L  [notebook section 5]
+Backup — Feature scaling: why we use 1/√L (deck p. 28)  [notebook section 5]
 
 One implementation choice matters for how the curves look, so we want to be explicit about it. The paper divides the features by the square root of P, but it is unclear whether that means the weight count 7p, the model's width L, or something else.
 
