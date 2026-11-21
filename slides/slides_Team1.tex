@@ -160,6 +160,9 @@ The comparison is larger versus smaller models within the same family. It does n
   \begin{itemize}
     \item $T$ = months in the training window (12, 60, 120)
     \item $L$ = number of random features used (2 to 7{,}000)
+    \begin{itemize}
+      \item \textbf{Cuts:} $L\le7{,}000$ (paper 12{,}000)
+    \end{itemize}
     \item $c=L/T$ = features per observation, the complexity
   \end{itemize}
   \item Same 159 factors and same two signal sets:
@@ -168,7 +171,6 @@ The comparison is larger versus smaller models within the same family. It does n
     \item B: the momentum signals
   \end{itemize}
   \item \textbf{Random Fourier features:} $T=12$: 100 feature draws; $T=60,120$: 10 draws
-  \item \textbf{Cuts:} $L\le7{,}000$ (paper 12{,}000)
 \end{itemize}
 \end{frame}
 
@@ -177,18 +179,7 @@ The comparison is larger versus smaller models within the same family. It does n
 \includegraphics[width=0.74\textwidth]{paper_fig3.png}\hspace{4pt}\raisebox{0.2em}{\includegraphics[height=0.24\textheight]{paper_legend.png}}\\[-1pt]
 {\scriptsize Paper Fig.\ 3, panels A (Welch--Goyal) and B (momentum); broken $c$ axis. Same colour code in both rows}\\[3pt]
 \includegraphics[width=0.8\textwidth]{fig3_T12_paperaxes.png}\\[-1pt]
-{\scriptsize Ours: mean OOS Sharpe over 159 factors, same axes (linear $c$ to 50, break, largest model $c=500$ at right; paper 1{,}000)}
-\end{frame}
-
-\begin{frame}{$R^2$ and coefficient norm at $T=12$: paper (left) and ours (right)}
-\centering
-\includegraphics[height=3.5cm]{paper_fig1.png}\hspace{4pt}\includegraphics[height=3.5cm]{fig1_T12_paperlayout.png}\\[1pt]
-\includegraphics[width=0.7\textwidth]{paper_legend_h.png}
-\vspace{1pt}
-\begin{itemize}\small
-  \item Near $c=1$ with small $z$: $R^2$ collapses and $\|\hat\beta\|$ spikes, as in the paper (ours: $R^2=-1.67$ at $c=1$, momentum, $z=10^{-3}$)
-  \item Past $c=1$ both recover; but our $\|\hat\beta\|$ plateaus (7.8) where the paper's keeps falling toward 0
-\end{itemize}
+{\scriptsize Ours: mean OOS Sharpe over 159 factors, same axes}
 \end{frame}
 
 \begin{frame}{Expected return and volatility at $T=12$: paper (left) and ours (right)}
@@ -197,12 +188,12 @@ The comparison is larger versus smaller models within the same family. It does n
 \includegraphics[width=0.7\textwidth]{paper_legend_h.png}
 \vspace{1pt}
 \begin{itemize}\small
-  \item At small $z$, expected return stays near 0.04 per month while volatility falls with $c$: the Sharpe rise comes from lower risk, not higher return
+  \item At small $z$, expected return stays near 0.04 per month while volatility falls with $c$: past $c=1$, the Sharpe rise comes from lower volatility, not higher return
   \item At large $z$ both shrink toward 0 in ours; the paper's curves at $z=10,100$ stay higher (feature scaling: see backup)
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Replication scorecard: Sharpe at large $z$, paper vs.\ ours}
+\begin{frame}{Sharpe at large $z$, paper vs.\ ours}
 \centering
 {\footnotesize
 \begin{tabular}{p{4.4cm}>{\centering\arraybackslash}p{3.6cm}>{\centering\arraybackslash}p{3.8cm}}
@@ -238,29 +229,6 @@ B: Momentum & & 0.345 $\to$ 0.363 ($1.05\times$) \\
 
 \vspace{3pt}
 {\scriptsize Paper values (T = 12) read off its figures by eye. Largest $c$: ours 500 / 64 / 32 at $T=12$ / 60 / 120; paper 1{,}000 at $T=12$.}
-\end{frame}
-
-\begin{frame}{Beyond Sharpe ($T=12$, $z=10^{-3}$): paper vs.\ ours}
-\centering
-{\footnotesize
-\begin{tabular}{lcccc}
-\toprule
-\textbf{At $z=10^{-3}$} & Paper A & Ours A & Paper B & Ours B \\
-\midrule
-Sharpe at $c=1$ (the dip) & $\approx$0.07 & 0.079 & $\approx$0.07 & 0.093 \\
-Expected return (per month) & $\approx$0.041 & 0.038 & $\approx$0.04 & 0.039 \\
-Volatility (per month) & $\approx$0.45 & 0.42 & $\approx$0.8--0.9 & 0.63 \\
-$R^2$ & $\approx-0.05$ & $-0.065$ & $\approx-0.45$ & $-0.18$ \\
-$\|\hat\beta\|$ & falls to $\approx1$ & 6.1 (plateau) & falls to $\approx1$ & 7.8 (plateau) \\
-\bottomrule
-\end{tabular}}
-
-\vspace{4pt}
-{\scriptsize Paper values read off its figures by eye. Rows other than the dip are at the largest $c$: ours 500, paper 1{,}000. 96--98\% of factors improve at $T=12$.}
-
-\vspace{6pt}
-\raggedright\small
-\textbf{Close:} Sharpe dip, expected return, volatility. \textbf{Not matched:} $\|\hat\beta\|$ plateaus, and the $z\ge1$ curves coincide (feature scaling: see backup).
 \end{frame}
 
 % ================= Hao =================
@@ -411,6 +379,40 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 
 
 \renewcommand{\spk}{Presenter: Yueqi Lin}
+\begin{frame}{Backup: $R^2$ and coefficient norm at $T=12$, paper (left) and ours (right)}
+\centering
+\includegraphics[height=3.5cm]{paper_fig1.png}\hspace{4pt}\includegraphics[height=3.5cm]{fig1_T12_paperlayout.png}\\[1pt]
+\includegraphics[width=0.7\textwidth]{paper_legend_h.png}
+\vspace{1pt}
+\begin{itemize}\small
+  \item Near $c=1$ with small $z$: $R^2$ collapses and $\|\hat\beta\|$ spikes, as in the paper
+  \item Past $c=1$ both recover; but our $\|\hat\beta\|$ plateaus where the paper's keeps falling toward 0
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Backup: beyond Sharpe ($T=12$, $z=10^{-3}$), paper vs.\ ours}
+\centering
+{\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{At $z=10^{-3}$} & Paper A & Ours A & Paper B & Ours B \\
+\midrule
+Sharpe at $c=1$ (the dip) & $\approx$0.07 & 0.079 & $\approx$0.07 & 0.093 \\
+Expected return (per month) & $\approx$0.041 & 0.038 & $\approx$0.04 & 0.039 \\
+Volatility (per month) & $\approx$0.45 & 0.42 & $\approx$0.8--0.9 & 0.63 \\
+$R^2$ & $\approx-0.05$ & $-0.065$ & $\approx-0.45$ & $-0.18$ \\
+$\|\hat\beta\|$ & falls to $\approx1$ & 6.1 (plateau) & falls to $\approx1$ & 7.8 (plateau) \\
+\bottomrule
+\end{tabular}}
+
+\vspace{4pt}
+{\scriptsize Paper values read off its figures by eye. Rows other than the dip are at the largest $c$: ours 500, paper 1{,}000. 96--98\% of factors improve at $T=12$.}
+
+\vspace{6pt}
+\raggedright\small
+\textbf{Close:} Sharpe dip, expected return, volatility. \textbf{Not matched:} $\|\hat\beta\|$ plateaus, and the $z\ge1$ curves coincide (feature scaling: see backup).
+\end{frame}
+
 \begin{frame}{Backup: feature scaling, we use $1/\sqrt{L}$ (our main runs)}
 \centering
 \includegraphics[width=0.68\textwidth]{scaling_slide.png}\\[-2pt]

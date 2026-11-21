@@ -62,7 +62,7 @@ Results are for US equity factors only: no futures, no Treasuries. See "What we 
 * **Futures and Treasuries.** The paper's futures come from the paid Stevens Continuous Futures
   feed and its bonds from CRSP/Fama–Bliss. We did not substitute other data.
 * **Seeds at T = 60 and 120:** 100 feature draws at T = 12 (as in the paper), but 10 at T = 60/120 and in the scaling
-  check. Per-seed metrics are averaged as in eqs. (47)–(51); the seed-averaged position of eq. (39) is not
+  check. A 100-draw check at T = 60 is in section 2. Per-seed metrics are averaged as in eqs. (47)–(51); the seed-averaged position of eq. (39) is not
   implemented. The smallest models (L = 2, 4) depend strongly on the draw (section 3.4).
 * **L up to 7,000 features (columns)**, not 12,000: c ≤ 500 at T = 12 (the paper reaches 1,000), c ≤ 64 at T = 60 and
   c ≤ 32 at T = 120.
@@ -207,6 +207,22 @@ Caveat: at a fixed c = 0.17 the longer windows already have more features (10 at
 at T = 12), so the low-complexity end is not comparable across windows. At T = 120 an intermediate ridge z = 1e-1 gives 0.402 (momentum),
 above always long (0.351), but that z was picked by looking at the out-of-sample grid, so we do not count it as evidence
 of timing skill.
+
+**Robustness: 100 draws at T = 60.** The paper averages 100 feature draws at every window; the main T = 60 runs use 10. We also
+ran T = 60 with 100 draws (seeds 1000 + s, so the 10 draws are the first 10 of the 100; results in `figures/curves_T60_100draws.npz`
+and `curves_T60_wg_100draws.npz`, logs alongside; `python -m experiments.curves --T 60 --seeds 100`, about 4.5 h per signal set,
+which overwrites `curves_T60*.npz`, so copy the existing ones first). Mean annualised Sharpe at large ridge:
+
+| Signals | draws | c = 0.17 | c_max (64) | rise | factors improving |
+|---|---|---|---|---|---|
+| momentum | 10 | 0.277 | 0.345 | +0.068 (1.24×) | 86% |
+| momentum | 100 | 0.295 | 0.345 | +0.050 (1.17×) | 93% |
+| Welch–Goyal | 10 | 0.266 | 0.335 | +0.069 (1.26×) | 83% |
+| Welch–Goyal | 100 | 0.235 | 0.335 | +0.100 (1.43×) | 86% |
+
+The high end (c ≥ 16) does not move; the smallest models do (by +0.018 and −0.031 at c = 0.17), and the rise with them. Always long, the trailing
+mean and the model-minus-always-long gap (−0.009 momentum, −0.014 Welch–Goyal) are unchanged, so the conclusions do not depend on the number of draws; the
+size of the rise at T = 60 does. The T = 120 rise (10 draws) should be read the same way.
 
 ### 3. Beyond the paper: what the curve does and does not show
 

@@ -107,18 +107,18 @@ def main():
                  ["$R^2$", r"$\|\hat\beta\|$"], rows)
     paper_layout([dA, dB], [("ER", lambda y: y, (-0.002, 0.047)), ("Vol", lambda y: y, (0, 2.5))], "fig2_T12_paperlayout.png",
                  ["Expected return (per month)", "Volatility (per month)"], rows)
-    # Placebo (momentum signals, T = 12): all seven ridge levels in one graph per case
+    # Placebo (momentum signals, T = 12): real signals (solid) and time-shuffled placebo (dashed) in one graph, all seven ridge levels
     p = np.load(FIG / "placebo.npz")
     c, real, plc = p["c"], p["real"], p["placebo"]
     pm = plc.mean(0)
-    hl = [(float(p["long"]), "r"), (float(p["trail"]), "k")]
-    ylim = (0.02, 0.37)
-    fig = plt.figure(figsize=(12, 3.9)); gs = GridSpec(1, 2, figure=fig, wspace=0.25, bottom=0.2, top=0.84, left=0.065, right=0.99)
-    broken_panel(fig, gs[0], c, real, "Real signals", ylim=ylim, ylabel="OOS Sharpe (mean of 159)", hlines=hl, fs=11)
-    broken_panel(fig, gs[1], c, pm, "Time-shuffled placebo (mean of 20 shuffles)", ylim=ylim, hlines=hl, fs=11)
-    h = [plt.Line2D([], [], color=PAPER_COLORS[j], lw=1.8) for j in range(7)] + [plt.Line2D([], [], color="r", ls="--"), plt.Line2D([], [], color="k", ls="--")]
-    l = [f"log10(z) = {j - 3}" for j in range(7)] + ["always long", "trailing mean"]
-    fig.legend(h, l, loc="upper center", ncol=9, fontsize=8.5, frameon=False, bbox_to_anchor=(0.5, 1.0))
+    fig = plt.figure(figsize=(8.5, 4.3)); gs = GridSpec(1, 1, figure=fig, bottom=0.17, top=0.83, left=0.1, right=0.98)
+    a, b = broken_panel(fig, gs[0], c, real, "", ylim=(0.05, 0.36), ylabel="OOS Sharpe (mean of 159)", fs=11)
+    for j in range(pm.shape[1]):
+        a.plot(c, pm[:, j], color=PAPER_COLORS[j], lw=1.6, ls="--")
+        b.hlines(pm[-1, j], 490, 500, color=PAPER_COLORS[j], lw=1.6, ls="--")
+    h = [plt.Line2D([], [], color=PAPER_COLORS[j], lw=1.8) for j in range(7)] + [plt.Line2D([], [], color="k", lw=1.8), plt.Line2D([], [], color="k", lw=1.8, ls="--")]
+    l = [f"log10(z) = {j - 3}" for j in range(7)] + ["real signals (solid)", "placebo (dashed)"]
+    fig.legend(h, l, loc="upper center", ncol=5, fontsize=9, frameon=False, bbox_to_anchor=(0.5, 1.0))
     fig.savefig(FIG / "placebo_paperaxes.png", dpi=150); plt.close(fig)
 
 

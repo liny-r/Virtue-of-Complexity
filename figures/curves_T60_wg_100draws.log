@@ -1,0 +1,20 @@
+  20/159 factors
+  40/159 factors
+  60/159 factors
+  80/159 factors
+  100/159 factors
+  120/159 factors
+  140/159 factors
+done in 18332s: 159 factors, T=60, seeds=100, columns=7000
+
+Mean annualised Sharpe (rows: z; cols: c = [ 0.17  1.   16.   64.  ] )
+  log10z=-3: [0.132 0.087 0.21  0.249]
+  log10z=-2: [0.158 0.18  0.287 0.306]
+  log10z=-1: [0.209 0.295 0.337 0.339]
+  log10z=+0: [0.232 0.315 0.336 0.337]
+  log10z=+1: [0.235 0.316 0.335 0.336]
+  log10z=+2: [0.235 0.317 0.335 0.335]
+  log10z=+3: [0.235 0.317 0.335 0.335]
+
+always long 0.349; trailing 0.323; linear ridge [0.192 0.201 0.236 0.29  0.314 0.309 0.307]
+mean R2 at c=1 (z=1e-3,1e3): [-0.794 -0.019]
