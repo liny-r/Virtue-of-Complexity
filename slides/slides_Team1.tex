@@ -85,6 +85,8 @@ $\hat\beta_t$ & the only learned weights ($L$ of them) \\
       rectangle ([xshift=-7.56bp,yshift=17.01bp]current page.south east);
     \node[anchor=base east,inner sep=0pt,outer sep=0pt,font=\scriptsize]
       at ([xshift=-6.64bp,yshift=9.30bp]current page.south east) {\insertframenumber};
+    \node[anchor=base west,inner sep=0pt,outer sep=0pt,font=\scriptsize,text=black!80]
+      at ([xshift=6bp,yshift=9.30bp]current page.south west) {Presenter: Hongjun Ding};
   \end{tikzpicture}%
 }]{method_Hongjun_Ding.pdf}
 \endgroup
@@ -329,7 +331,6 @@ Mean Sharpe, 159 factors (B) & $T=12$ & $T=60$ & $T=120$ \\
 \midrule
 Model, large $z$, $c_{\max}$ & 0.342 & 0.345 & \textbf{0.363} \\
 Always long the vol-scaled factor & \textbf{0.353} & \textbf{0.354} & 0.351 \\
-Trailing $T$-month mean & 0.338 & 0.309 & 0.303 \\
 Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \bottomrule
 \end{tabular}
@@ -343,7 +344,7 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 
 \begin{frame}{Backup: placebo with time-shuffled signals}
 \centering
-\includegraphics[width=0.96\textwidth]{placebo_paperaxes.png}
+\includegraphics[height=0.5\textheight]{placebo_paperaxes.png}
 \vspace{-2pt}
 \begin{itemize}\small
   \item Same rise with shuffled signals: $+0.177$ placebo vs $+0.176$ real ($z=10^3$, $T=12$)
