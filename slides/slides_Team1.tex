@@ -2,6 +2,8 @@
 \usetheme{metropolis}
 \usepackage{amsmath,amssymb,booktabs,array}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usetikzlibrary{positioning,arrows.meta}
 \graphicspath{{../figures/}{./}}
 \setbeamertemplate{navigation symbols}{}
@@ -150,7 +152,80 @@ $\hat\pi_t=S_t^\top\hat\beta_t$ & $\hat R_{t+1}=\hat\pi_t\,R_{t+1}$
 \end{itemize}
 \end{frame}
 
-% ================= Yueqi: 7-9 =================
+% ================= Hao: results, PDF pages 10--12 =================
+% Inserted after original PDF page 9; notes target 2:30 in total.
+\renewcommand{\spk}{Presenter: Hao Li}
+\begin{frame}[t,label=hao-results-sharpe]{Larger models improve Sharpe with enough ridge}
+\centering
+\includegraphics[width=0.93\textwidth]{paper_fig3.png}\\[3pt]
+\includegraphics[width=0.72\textwidth]{paper_legend_h.png}
+\raggedright
+\begin{itemize}\small
+  \item \textbf{Paper Fig.~3:} 159 equity factors, $T=12$ months. Left: 15 macro predictors; right: 2 momentum signals
+  \item Weak ridge dips near $c=1$; sufficient ridge gives higher Sharpe as complexity grows
+\end{itemize}
+\alert{Same inputs, more transformations; roughly $3\times$ higher Sharpe.}
+\vfill
+{\scriptsize Source: Kelly--Malamud--Zhou (2022), Fig.~3, equity panels A/B, PDF p.~36; discussion p.~26. Original paper figure.}
+\note{
+\textbf{Hao Li --- 75 seconds.}\par
+These are the paper's equity results from Figure Three, with twelve months in each training window. The left panel uses fifteen macroeconomic predictors; the right uses two momentum signals. Across each panel, complexity increases as the model uses more random features. The vertical axis is average out-of-sample Sharpe, and colors represent ridge penalties.
+\par
+Weak shrinkage produces a dip near complexity one, where features equal training observations. With sufficient shrinkage, Sharpe rises as models grow. The authors describe roughly a threefold improvement from low to high complexity. The original financial information stays fixed: larger models get more transformations, not more data. This supports greater flexibility under appropriate regularization.
+\par
+These scores average separate strategies across one hundred and fifty-nine factors; they are not the Sharpe of a single combined portfolio. The broader paper also reports evidence for futures and bonds.
+\par\textbf{Cue (not spoken):} Point to the horizontal axis, then to the strongest-shrinkage curves. Do not explain every color. Allow 4 seconds for pauses.
+}
+\end{frame}
+
+\begin{frame}[t,label=hao-results-r2]{Prediction accuracy improves with appropriate ridge}
+\begingroup\small \textbf{Paper Fig.~1, panel A:} 15 macro predictors, $T=12$ months.\par\endgroup
+\vspace{3pt}
+\begin{columns}[c,onlytextwidth]
+  \begin{column}{0.70\textwidth}
+    \includegraphics[width=0.86\linewidth]{paper_fig1_r2_wg.png}
+  \end{column}
+  \begin{column}{0.27\textwidth}
+    \small
+    \textbf{$R^2=0$:} matches the sample-mean forecast.\\[8pt]
+    \textbf{$R^2>0$:} lower squared forecast error.
+  \end{column}
+\end{columns}
+\vspace{3pt}
+\centering\includegraphics[width=0.72\textwidth]{paper_legend_h.png}
+\raggedright
+\begin{itemize}\small
+  \item Appropriate ridge produces small positive prediction scores
+  \item Weak ridge is unstable near $c=1$; the dip extends below the plotted range
+\end{itemize}
+\vfill
+{\scriptsize Source: Kelly--Malamud--Zhou (2022), Fig.~1, panel A, PDF p.~34; empirical $R^2$ definition in Eq.~(41), p.~22. Original paper crop.}
+\note{
+\textbf{Hao Li --- 35 seconds.}\par
+This panel from Figure One measures prediction accuracy directly, using the macroeconomic inputs and twelve-month window. Zero means matching the sample-mean forecast; positive values mean lower squared forecast error. With weak ridge, accuracy collapses near complexity one and then recovers. The bottom of that dip is outside the displayed range. Appropriate ridge produces small positive scores. So Sharpe and R-squared measure different outcomes, and the paper examines both.
+\par\textbf{Cue (not spoken):} Briefly point to zero, the low-ridge dip, and the small positive curves. Do not read individual values. Allow 3 seconds for pauses. The inserted panel is from the paper, not the replication.
+}
+\end{frame}
+
+\begin{frame}[t,label=hao-results-windows]{The pattern also appears with longer windows}
+\centering
+\includegraphics[width=0.88\textwidth,height=0.48\textheight,keepaspectratio]{paper_fig5_equities.png}\\[1pt]
+\includegraphics[width=0.70\textwidth]{paper_legend_h.png}\par
+\raggedright
+{\small Left: $T=60$ months; right: $T=120$. Top: macro predictors; bottom: momentum.\\
+With sufficient ridge, complexity gains remain, although many curves level off.}
+\vfill
+{\scriptsize Source: Kelly--Malamud--Zhou (2022), Fig.~5, equity panels A/B, PDF p.~38; discussion p.~27. Sharpe measures trading performance, not prediction accuracy.}
+\note{
+\textbf{Hao Li --- 40 seconds.}\par
+Figure Five asks whether the Sharpe pattern depends on training with only twelve months. The left column uses sixty months and the right uses one hundred and twenty. The top row uses macroeconomic predictors; the bottom uses momentum signals. With sufficient shrinkage, the authors again report gains from complexity, although many curves level off quickly.
+\par
+The comparison is larger versus smaller models within the same family. It does not establish superiority over simple financial alternatives. Our implementation section examines that distinction.
+\par\textbf{Cue (not spoken):} Point to the 60-month and 120-month headings. Hand over to the implementation presenter if applicable; resume at PDF page 21 for critique. Allow 3 seconds for pauses.
+}
+\end{frame}
+
+% ================= Yueqi: implementation =================
 \renewcommand{\spk}{Presenter: Yueqi Lin}
 \begin{frame}{Our implementation (equities only)}
 \begin{itemize}
@@ -261,7 +336,87 @@ $\|\hat\beta\|$ & falls to $\approx1$ & 6.1 (plateau) & falls to $\approx1$ & 7.
 \textbf{Close:} Sharpe dip, expected return, volatility. \textbf{Not matched:} $\|\hat\beta\|$ plateaus, and the $z\ge1$ curves coincide (feature scaling: see backup).
 \end{frame}
 
-\begin{frame}{Does complexity beat simple baselines?}
+% ================= Hao =================
+\renewcommand{\spk}{Presenter: Hao Li}
+% Main critique: PDF pages 19--20. Baseline and placebo checks are in backup.
+% Notes target 2:00 in total. Thank-you slide closes the main presentation.
+\begin{frame}[t,label=hao-critique-benchmark]{Complexity gains do not establish a timing edge}
+\begingroup\small \textbf{Our added benchmark check:} mean annualised Sharpe across 159 separate factor strategies.\par\endgroup
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.86\textwidth,height=3.6cm,
+  ybar,bar width=21pt,
+  ymin=0,ymax=0.45,ytick={0,0.1,0.2,0.3,0.4},
+  symbolic x coords={Momentum,Macro},xtick=data,
+  xticklabels={Momentum inputs,Macro inputs},
+  enlarge x limits=0.65,
+  axis lines*=left,ymajorgrids=true,grid style={black!12},
+  tick label style={font=\scriptsize},
+  legend style={font=\scriptsize,draw=none,at={(0.5,1.03)},anchor=south,legend columns=2},
+  nodes near coords,
+  every node near coord/.append style={font=\scriptsize,/pgf/number format/fixed,/pgf/number format/precision=3,/pgf/number format/zerofill},
+]
+\addplot[fill=black!70,draw=none] coordinates {(Momentum,0.342) (Macro,0.368)};
+\addplot[fill=orange!65,draw=none] coordinates {(Momentum,0.353) (Macro,0.349)};
+\legend{Large model,Always long}
+\end{axis}
+\end{tikzpicture}
+\end{center}
+\vspace{-5pt}
+\begin{itemize}\small
+  \item Selected models stay close to a simple holding rule: a reliable timing advantage is not established
+  \item Always-long uses the factors' published directions: informative, but not a neutral benchmark
+\end{itemize}
+\vfill
+{\scriptsize Our replication: $T=12$, $z=1{,}000$, $c=500$, 100 draws; same evaluation dates and volatility scaling within each comparison. Macro and momentum samples differ. Source: saved \texttt{curves\_T12*.npz} results.}
+\note{
+\textbf{Hao Li --- 70 seconds.}\par
+My first critique concerns the benchmark. The paper's main figures compare model sizes, but do not include an always-long factor strategy. Our equity replication adds that comparison. With twelve-month training and strong ridge, momentum inputs give a mean annualized Sharpe of zero point three four two, versus zero point three five three for always long. Macroeconomic inputs give zero point three six eight, versus zero point three four nine.
+\par
+Those small gaps do not establish a reliable timing advantage. Always long is an informative comparison, although the factors' published directions make it imperfect. This qualifies the economic interpretation; it does not overturn the larger-versus-smaller-model finding.
+\par
+A fair test therefore needs the same evaluation dates and risk scaling for each comparison. We also need uncertainty estimates that allow different factor strategies to move together.
+\par\textbf{Cue (not spoken):} Say explicitly that these are OUR replication numbers, not values from the paper. Read the values slowly. Allow 4 seconds for pauses.
+}
+\end{frame}
+
+\begin{frame}[t,label=hao-critique-practice]{A usable strategy needs further tests}
+\begin{itemize}
+  \item \textbf{Trading costs.} Do gains survive turnover, financing and transaction costs? The displayed curves do not provide that net-performance test
+  \vspace{9pt}
+  \item \textbf{Penalty selection.} Can $z$ be chosen using only past data? Choose it on an earlier validation period, freeze it, and test later after realistic costs
+\end{itemize}
+\vspace{10pt}
+\alert{Supports complexity gains within this model family;}\\
+profitability after costs remains unproven.
+\vfill
+{\scriptsize Interpretation of the displayed evidence, not a finding of look-ahead bias. Sources: paper Section~5.1 and Figs.~3/5; cost caveat in footnote~14, p.~17.}
+\note{
+\textbf{Hao Li --- 50 seconds.}\par
+My second critique concerns practical use. Trading must survive turnover, financing and transaction costs. These curves do not provide that net-performance test.
+\par
+A usable strategy also needs a rule for choosing the ridge penalty using only past data. Picking the best curve after seeing test results would exaggerate performance. This is a follow-up test, not a claim of bias.
+\par
+One practical next step is to choose the penalty on an earlier validation period, freeze it, and then evaluate a later period after realistic costs.
+\par
+Complexity gains are supported within this model family. Profitability after costs remains unproven.
+\par\textbf{Cue (not spoken):} End here. Do not add a walkthrough of the simulator or kernel checks. Allow 4 seconds for pauses.
+}
+\end{frame}
+
+\begin{frame}[label=thank-you]{Thank you}
+\centering
+{\Huge Thank you}
+\vspace{12pt}
+
+{\large Questions?}
+\end{frame}
+
+% ================= Backup =================
+\appendix
+\renewcommand{\spk}{Presenter: Yueqi Lin}
+\begin{frame}{Backup: does complexity beat simple baselines?}
 \begin{center}
 \begin{tabular}{lccc}
 \toprule
@@ -281,7 +436,7 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Beyond the paper: placebo with time-shuffled signals}
+\begin{frame}{Backup: placebo with time-shuffled signals}
 \centering
 \includegraphics[width=0.96\textwidth]{placebo_paperaxes.png}
 \vspace{-2pt}
@@ -291,9 +446,8 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \end{itemize}
 \end{frame}
 
-% ================= Hao =================
 \renewcommand{\spk}{Presenter: Hao Li}
-\begin{frame}{Critique}
+\begin{frame}{Backup: critique}
 \begin{enumerate}
   \item \textbf{Mostly shrinkage.} The rise with $c$ is largely features converging to a kernel; learned predictability is a small part
   \item \textbf{Baseline.} Complexity levels are compared with each other, not with always-long
@@ -304,7 +458,7 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \end{enumerate}
 \end{frame}
 
-\begin{frame}{Takeaways}
+\begin{frame}{Backup: takeaways}
 \begin{itemize}
   \item \textbf{Replicated:} on 159 equity factors at $T=12$, Sharpe rises with $c$ (2--3$\times$), with a double-descent dip at small $z$
   \item \textbf{Qualified:} the gain fades at $T=60,120$ and needs large ridge
@@ -315,8 +469,6 @@ Linear ridge on same signals & 0.11--0.16 & 0.24--0.27 & 0.31--0.35 \\
 \centering\small Code, data and every number: \texttt{github.com/liny-r/Virtue-of-Complexity}
 \end{frame}
 
-% ================= Backup =================
-\appendix
 \renewcommand{\spk}{Presenter: Hongjun Ding}
 \begin{frame}{Backup: why squared error and Sharpe can disagree}
 \[
