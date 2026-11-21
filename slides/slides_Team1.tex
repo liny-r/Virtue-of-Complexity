@@ -1,6 +1,7 @@
 \documentclass[aspectratio=169,10pt]{beamer}
 \usetheme{metropolis}
 \usepackage{amsmath,amssymb,booktabs,array}
+\usepackage{pdfpages}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
@@ -70,89 +71,15 @@ $\hat\beta_t$ & the only learned weights ($L$ of them) \\
 \textbf{Data check.} Our recomputed annualised mean, volatility and Sharpe correlate $0.996$, $0.9995$, $0.997$ with the paper's Table 1 (158 matched factors).
 \end{frame}
 
-% ================= Hongjun: 4-6 =================
-\renewcommand{\spk}{Presenter: Hongjun Ding}
-\begin{frame}{The paper's setup (Section 3): from a forecast to a strategy}
-\begin{itemize}
-  \item \textbf{Assumption 1:} $R_{t+1}=f(X_t)+\varepsilon_{t+1}$, with $f$ smooth and unknown, $\varepsilon\sim N(0,1)$
-  \item If $\hat f(X_t)\approx E_t[R_{t+1}]$, the conditionally efficient position is $\hat\pi_t=\hat f(X_t)$, since standardised returns have unit conditional volatility
-  \item \textbf{Kernel ridge regression:} $\hat f(x)=T^{-1}\hat k(x)^\top\big(zI+T^{-1}\hat K\big)^{-1}R$, equivalent to a shallow two-layer network: $P$ random hidden units, ridge-trained output layer
-  \item \textbf{The pitfall:} $\hat f\to f$ only if $c=P/T\to0$. With little data ($T$ small) that forces simple models
-  \item \textbf{The trade-off:} better approximation (large $P$) vs.\ over-parametrisation. Kelly et al.\ (2022): the highest out-of-sample $R^2$ and Sharpe come from the \alert{highest} complexity
-\end{itemize}
-\end{frame}
+% ================= Hongjun: The Method =================
+\begingroup
+\setbeamercolor{background canvas}{bg=}
+\includepdf[pages=-]{method_Hongjun_Ding.pdf}
+\endgroup
+% Preserve downstream frame numbers after replacing the five original frames.
+\addtocounter{framenumber}{5}
 
-\begin{frame}{Model: fixed random features, learned ridge weights}
-\centering
-\begin{tikzpicture}[font=\scriptsize,
-  box/.style={draw,rounded corners=2pt,align=center,inner sep=4pt,minimum height=1.5cm},
-  fix/.style={box,fill=black!6},
-  lrn/.style={box,fill=orange!20},
-  arr/.style={-{Stealth},thick}]
-\node[box,text width=1.9cm] (g) {signals\\[1pt]$X_t\in\R^{d}$\\[1pt]{\tiny $d=2$ or $15$}};
-\node[fix,text width=5.3cm,right=0.4cm of g] (f) {\textbf{Fixed, sampled once per seed}\\[1pt]
- draw $P=7p$ weights $\omega_i\sim N(0,I_d)$, 7 bandwidths $\gamma$\\[1pt]
- $\big(\sin(\gamma\,\omega_i^\top X_t),\ \cos(\gamma\,\omega_i^\top X_t)\big)$\\[1pt]
- shuffle pairs, keep the first $L$ columns};
-\node[box,text width=1.9cm,right=0.4cm of f] (s) {features\\[1pt]$S_t\in\R^{L}$\\[1pt]{\tiny $L\le 2P$}};
-\node[lrn,text width=2.5cm,right=0.4cm of s] (b) {\textbf{Learned}\\[1pt]ridge $\hat\beta_t\in\R^{L}$\\[1pt]$\hat\pi_t=S_t^\top\hat\beta_t$};
-\draw[arr] (g)--(f); \draw[arr] (f)--(s); \draw[arr] (s)--(b);
-\end{tikzpicture}
-
-{\scriptsize Same $\omega$ for every factor at a given seed; 100 seeds; metrics averaged over seeds, then over the 159 factors}
-
-\vspace{3pt}
-{\footnotesize \textbf{Study A:} $d=15$ Welch--Goyal macro variables, the same for every factor. \textbf{Study B:} $d=2$ momentum signals from each factor's own returns: last month and the average of the 11 months before.}
-
-\vspace{1pt}
-\raggedright
-\textbf{Learned: ridge on the last $T$ months.}
-\[
-\hat\beta_t(z)=\Big(zI+\tfrac1T\sum_{\tau=t-T}^{t-1}S_\tau S_\tau^\top\Big)^{-1}\tfrac1T\sum_{\tau=t-T}^{t-1}S_\tau R_{\tau+1}
-\ \Longleftrightarrow\ \min_\beta\ \tfrac1T\sum_\tau (R_{\tau+1}-\beta^\top S_\tau)^2+z\|\beta\|^2
-\]
-{\small Nonlinear in $X_t$, linear in $\hat\beta$ (a two-layer network with a frozen first layer). The loss is squared error: \alert{Sharpe is not optimised}, only evaluated.}
-\end{frame}
-
-\begin{frame}{Timing strategy and what we measure}
-\centering
-\begin{tabular}{cc}
-\textbf{1. Forecast = position} & \textbf{2. Strategy return}\\[2pt]
-$\hat\pi_t=S_t^\top\hat\beta_t$ & $\hat R_{t+1}=\hat\pi_t\,R_{t+1}$
-\end{tabular}
-
-\vspace{8pt}
-\raggedright
-\begin{itemize}
-  \item \textbf{Timeline:} train on pairs up to $t$ (returns already realised), forecast at $t$, earn at $t+1$. No look-ahead
-  \item \textbf{Metrics:} out-of-sample $R^2$, $\|\hat\beta\|$, expected return, volatility, annualised Sharpe of $\hat R$
-  \item \textbf{Aggregation:} Sharpe per seed per factor, averaged over seeds, then over factors (not the Sharpe of a 159-factor portfolio)
-  \item \textbf{Scale:} multiplying $\hat\beta$ by a positive constant changes $R^2$ and $\|\hat\beta\|$, but not Sharpe
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Why $L\gg T$ can work: three results from Kelly et al.\ (2022)}
-\begin{enumerate}
-  \item \textbf{Leverage falls (Lemma 1).} Among all interpolators, the ridgeless $\hat\beta(0^+)$ has the smallest norm, so $\|\hat\beta\|$ falls with $L$ for $L>T$. Since $E[\hat\pi_t^2]\approx\|\hat\beta\|^2$, leverage falls for $c>1$
-  \item \textbf{Expected return rises.} $E[\hat\pi_tR_{t+1}]$ increases with $c$ as the model approximates $f$ better; even the ridgeless strategy has positive out-of-sample expected return
-  \item \textbf{So $R^2$ and Sharpe rise.} For $c>1$ both increase with complexity, and with enough shrinkage for all $c$. With too little shrinkage they blow up at $c=1$ (double ascent)
-\end{enumerate}
-\vspace{4pt}
-\[E\big[(R_{t+1}-\hat\pi_t)^2\big]=E[R_{t+1}^2]-2\underbrace{E[\hat\pi_tR_{t+1}]}_{\text{timing expected return}}+\underbrace{E[\hat\pi_t^2]}_{\text{leverage}}\]
-{\small $R^2$ is a poor measure (it is sensitive to the scale of $\hat\pi_t$); Sharpe captures the risk--return trade-off. As $c\to\infty$ the model approaches kernel ridge regression.}
-\end{frame}
-
-\begin{frame}{What the paper concludes (Sections 5--6)}
-\begin{itemize}
-  \item Tested on three asset classes: 159 equity factors, 44 futures, US Treasuries
-  \item Predictions confirmed: $R^2$ and expected return rise with $c$; $\|\hat\beta\|$ and volatility fall; Sharpe rises by about $3\times$ from low to high complexity
-  \item Uniform across assets (Fig.~4) and robust to the training window, $T=12,60,120$ (Fig.~5)
-  \item Strong results even with very short windows; the authors read this as some truth in the non-stationarity worry
-  \item \textbf{Our scope:} equity factors only
-\end{itemize}
-\end{frame}
-
-% ================= Hao: results, PDF pages 10--12 =================
+% ================= Hao: results, PDF pages 11--13 =================
 % Inserted after original PDF page 9; notes target 2:30 in total.
 \renewcommand{\spk}{Presenter: Hao Li}
 \begin{frame}[t,label=hao-results-sharpe]{Larger models improve Sharpe with enough ridge}
@@ -221,7 +148,7 @@ With sufficient ridge, complexity gains remain, although many curves level off.}
 Figure Five asks whether the Sharpe pattern depends on training with only twelve months. The left column uses sixty months and the right uses one hundred and twenty. The top row uses macroeconomic predictors; the bottom uses momentum signals. With sufficient shrinkage, the authors again report gains from complexity, although many curves level off quickly.
 \par
 The comparison is larger versus smaller models within the same family. It does not establish superiority over simple financial alternatives. Our implementation section examines that distinction.
-\par\textbf{Cue (not spoken):} Point to the 60-month and 120-month headings. Hand over to the implementation presenter if applicable; resume at PDF page 21 for critique. Allow 3 seconds for pauses.
+\par\textbf{Cue (not spoken):} Point to the 60-month and 120-month headings. Hand over to the implementation presenter if applicable; resume at the critique on PDF page 20. Allow 3 seconds for pauses.
 }
 \end{frame}
 
@@ -338,7 +265,7 @@ $\|\hat\beta\|$ & falls to $\approx1$ & 6.1 (plateau) & falls to $\approx1$ & 7.
 
 % ================= Hao =================
 \renewcommand{\spk}{Presenter: Hao Li}
-% Main critique: PDF pages 19--20. Baseline and placebo checks are in backup.
+% Main critique: PDF pages 20--21. Baseline and placebo checks are in backup.
 % Notes target 2:00 in total. Thank-you slide closes the main presentation.
 \begin{frame}[t,label=hao-critique-benchmark]{Complexity gains do not establish a timing edge}
 \begingroup\small \textbf{Our added benchmark check:} mean annualised Sharpe across 159 separate factor strategies.\par\endgroup
