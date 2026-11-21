@@ -74,10 +74,20 @@ $\hat\beta_t$ & the only learned weights ($L$ of them) \\
 % ================= Hongjun: The Method =================
 \begingroup
 \setbeamercolor{background canvas}{bg=}
-\includepdf[pages=-]{method_Hongjun_Ding.pdf}
+% The imported pages have section-local numbers baked into the PDF.
+\definecolor{methodslidebackground}{RGB}{250,250,249}
+\includepdf[pages=-,pagecommand={%
+  \thispagestyle{empty}%
+  \stepcounter{framenumber}%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[methodslidebackground]
+      ([xshift=-13.23bp,yshift=10.87bp]current page.south east)
+      rectangle ([xshift=-7.56bp,yshift=17.01bp]current page.south east);
+    \node[anchor=base east,inner sep=0pt,outer sep=0pt,font=\scriptsize]
+      at ([xshift=-6.64bp,yshift=9.30bp]current page.south east) {\insertframenumber};
+  \end{tikzpicture}%
+}]{method_Hongjun_Ding.pdf}
 \endgroup
-% Preserve downstream frame numbers after replacing the five original frames.
-\addtocounter{framenumber}{5}
 
 % ================= Hao: results, PDF pages 11--13 =================
 % Inserted after original PDF page 9; notes target 2:30 in total.
